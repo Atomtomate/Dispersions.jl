@@ -10,4 +10,4 @@ codecov: true
 coveralls: true
 
 after_success:
-  - julia -e 'cd(Pkg.dir("Dispersions")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; cd(Pkg.dir("Dispersions")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
