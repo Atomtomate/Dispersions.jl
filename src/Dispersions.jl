@@ -3,7 +3,7 @@ module Dispersions
 export gen_kGrid
   
 """
-    gen_kGrid(Nk, D[; min = 0, max = π, include_min=true]) = 
+    gen_kGrid(Nk, D[; min = 0, max = π, include_min=true])
 
 Generates an Iterator for the Cartesian product of k vectors. 
 This can be collected to reduce into a `Nk` times `Nk` array, containing
