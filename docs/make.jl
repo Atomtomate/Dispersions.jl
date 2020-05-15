@@ -1,5 +1,6 @@
 using Documenter
-using Dispersions
+include("../src/Dispersions.jl")
+using .Dispersions
 
 makedocs(
     sitename = "Dispersions.jl",
@@ -12,4 +13,6 @@ makedocs(
 # for more information.
 deploydocs(
     repo = "github.com/Atomtomate/Dispersions.jl.git",
+    devbranch = "master",
+    devurl = "stable"
 )
