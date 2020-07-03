@@ -37,7 +37,7 @@ const GridP2D = Tuple{Array{Float64,1},Array{Float64,1}}
 const GridP3D = Tuple{Array{Float64,1},Array{Float64,1},Array{Float64,1}}
 
 struct FullKIndices_cP{Ind<:Union{Ind2D, Ind3D}} <: FullKIndices{Base.Iterators.ProductIterator{Ind}} 
-    ind::Base.Iterators.ProductIterator{Ind}
+    grid::Base.Iterators.ProductIterator{Ind}
 end
 collect(indices::FullKIndices_cP) = collect(indices.ind)
 
