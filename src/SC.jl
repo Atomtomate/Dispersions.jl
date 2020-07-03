@@ -12,7 +12,7 @@ export gen_cP_kGrid, reduce, reduce_kGrid_cP, expand
 # ================================================================================ #
 abstract type KIndices{T} end
 abstract type FullKIndices{T <: Base.Iterators.ProductIterator} <: KIndices{T} end
-abstract type ReducedKIndices{T} <: KIndices{T} end
+abstract type ReducedKIndices{T <: Array} <: KIndices{T} end
 
 abstract type KPoints{T} end
 abstract type FullKPoints{T <: Base.Iterators.ProductIterator} <: KPoints{T} end
@@ -25,17 +25,16 @@ abstract type Dispersion{T <: KGrid} end
 # -------------------------------------------------------------------------------- #
 #                                 Simple Cubic                                     #
 # -------------------------------------------------------------------------------- #
+
+# ------------------------------- Type Defs --------------------------------
 abstract type KGrid_cP{T1, T2} <: KGrid{T1, T2} end
+
 
 # ------------------------------- Full Grids -------------------------------
 const Ind2D = Tuple{UnitRange{Int64},UnitRange{Int64}}
 const Ind3D = Tuple{UnitRange{Int64},UnitRange{Int64},UnitRange{Int64}}
 const GridP2D = Tuple{Array{Float64,1},Array{Float64,1}}
 const GridP3D = Tuple{Array{Float64,1},Array{Float64,1},Array{Float64,1}}
-const rInd2D = Tuple{Int64,Int64}
-const rInd3D = Tuple{Int64,Int64,Int64}
-const rGridP2D = Tuple{Float64,Float64}
-const rGridP3D = Tuple{Float64,Float64,Float64}
 
 struct FullKIndices_cP{Ind<:Union{Ind2D, Ind3D}} <: FullKIndices{Base.Iterators.ProductIterator{Ind}} 
     ind::Base.Iterators.ProductIterator{Ind}
@@ -46,7 +45,6 @@ struct FullKPoints_cP{gInd<:Union{GridP2D, GridP3D}} <: FullKPoints{Base.Iterato
     grid::Base.Iterators.ProductIterator{gInd}
 end
 collect(grid::FullKPoints_cP) = collect(grid.grid)
-
 
 struct FullKGrid_cP{IndT <: FullKIndices_cP, GridT <: FullKPoints_cP}  <: KGrid_cP{IndT, GridT}
     Nk::Int64
@@ -62,23 +60,26 @@ struct FullKGrid_cP{IndT <: FullKIndices_cP, GridT <: FullKPoints_cP}  <: KGrid_
 end
 
 # ------------------------------- Reduced Grids -------------------------------
+const rInd2D = Tuple{Int64,Int64}
+const rInd3D = Tuple{Int64,Int64,Int64}
+const rGridP2D = Tuple{Float64,Float64}
+const rGridP3D = Tuple{Float64,Float64,Float64}
 
-struct ReducedKGrid_cP_2D
-    Nk::Int64
-    kInd::Array{rInd2D,1}
-    kMult::Array{Float64,1}
-    kGrid::Array{rGridP2D,1}
+struct ReducedKIndices_cP{Ind<:Union{rInd2D, rInd3D}} <: ReducedKIndices{Array{Ind,1}} 
+    ind::Array{Ind,1}
 end
 
-struct ReducedKGrid_cP_3D
-    Nk::Int64
-    kInd::Array{rInd3D,1}
-    kMult::Array{Float64,1}
-    kGrid::Array{rGridP3D,1}
+struct ReducedKPoints_cP{gInd<:Union{rGridP2D, rGridP3D}} <: ReducedKPoints{Array{gInd,1}} 
+    grid::Array{gInd,1}
 end
 
-const ReducedKGrid_cP = Union{ReducedKGrid_cP_2D, ReducedKGrid_cP_3D}
 
+struct ReducedKGrid_cP{IndT <: ReducedKIndices_cP, GridT <: ReducedKPoints_cP}  <: KGrid_cP{IndT, GridT}
+    Nk::Int64
+    kInd::IndT
+    kMult::Array{Float64,1}
+    kGrid::GridT
+end
 
 # -------------------------------- Grid Data  ---------------------------------
 abstract type GridData{DataType <: Number, GridType <: Any} end
@@ -113,7 +114,7 @@ tuples of length `D`.
 # Examples
 ```
 julia> gen_cP_kGrid(2, 2)
-FullKGrid_cP_2D(2, FullKIndices_cP_2D(Base.Iterators.ProductIterator{Tuple{UnitRange{Int64},UnitRange{Int64}}}((1:2, 1:2))), FullKPoints_cP_2D(Base.Iterators.ProductIterator{Tuple{Array{Float64,1},Array{Float64,1}}}(([0.0, 3.141592653589793], [0.0, 3.141592653589793]))))
+4,1}}}}(2, Dispersions.FullKIndices_cP{Tuple{UnitRange{Int64},UnitRange{Int64}}}(Base.Iterators.ProductIterator{Tuple{UnitRange{Int64},UnitRange{Int64}}}((1:2, 1:2))), Dispersions.FullKPoints_cP{Tuple{Array{Float64,1},Array{Float64,1}}}(Base.Iterators.ProductIterator{Tuple{Array{Float64,1},Array{Float64,1}}}(([0.0, 3.141592653589793], [0.0, 3.141592653589793]))))
 ```
 """
 function gen_cP_kGrid(Nk::Int64, D::Int64)
@@ -134,11 +135,9 @@ end
 Wrapper function to reduce FullkGrid to reduced kGrid.
 """
 function reduce(kGrid::FullKGrid_cP) 
-    rInd = kGrid |> indices |> collect |> reduce_kGrid_cP
-    rGrid = kGrid |> gridPoints |> collect |> reduce_kGrid_cP
-    typeof(kGrid) == FullKGrid_cP_2D ? 
-        ReducedKGrid_cP_2D(Nk(kGrid), rInd, multiplicity_cP(rInd), rGrid) :
-        ReducedKGrid_cP_3D(Nk(kGrid), rInd, multiplicity_cP(rInd), rGrid)
+    rInd = kGrid |> indices |> collect |> reduce_kGrid_cP |> ReducedKIndices_cP
+    rGrid = kGrid |> gridPoints |> collect |> reduce_kGrid_cP |> ReducedKPoints_cP
+    ReducedKGrid_cP(Nk(kGrid), rInd, multiplicity(rInd), rGrid)
 end
 
 """
@@ -172,8 +171,8 @@ function expand(kGrid::ReducedKGrid_cP)
     kInd::
     kMult::Array{rInd3D,1}
     kGrid::Array{rGridP3D,1}
-    ReducedKGrid_cP(Nk(kGrid), kGrid |> indices |> collect |> reduce_kGrid_cP,
-                               kGrid |> gridPoints |> collect |> reduce_kGrid_cP)
+    ReducedKGrid_cP(Nk(kGrid), kGrid |> indices |> collect |> reduce_kGrid,
+                               kGrid |> gridPoints |> collect |> reduce_kGrid)
 end
 
 function expand(kGrid::ReducedKGrid_cP, target::Array{T,1} = nothing)  where T <: Number
@@ -211,12 +210,12 @@ end
 Compute multiplicity for each k point over a given index
 array of a reduced kGrid.
 """
-function multiplicity_cP(kIndices::Union{Array{rInd3D,1},Array{rInd2D,1}})
-    min_ind = minimum(kIndices)
-    max_ind = maximum(kIndices)
+function multiplicity(kIndices::ReducedKIndices_cP)
+    min_ind = minimum(kIndices.ind)
+    max_ind = maximum(kIndices.ind)
     borderFactor(el) = prod((el[i] == min_ind[i] || el[i] == max_ind[i]) ? 0.5 : 1.0 for i in 1:length(min_ind))
-    length(min_ind) == 2 ? map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices) :
-            map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices)
+    length(min_ind) == 2 ? map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices.ind) :
+            map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices.ind)
 end
 
 # ---------------------------- Mirror Symmetry -------------------------------
