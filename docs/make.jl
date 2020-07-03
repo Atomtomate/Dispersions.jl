@@ -1,4 +1,5 @@
 using Documenter
+push!(LOAD_PATH,"../src/")
 include("../src/Dispersions.jl")
 using .Dispersions
 
