@@ -3,3 +3,6 @@
     - reduce_kGrid
     - FullGrid
     - ReducedGrid
+
+- make kGridPoints behave like array
+    - convert?

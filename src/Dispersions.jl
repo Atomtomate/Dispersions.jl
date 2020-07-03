@@ -1,4 +1,5 @@
 module Dispersions
+using Combinatorics
 
 export  indices, gridPoints, Nk
 

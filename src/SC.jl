@@ -39,7 +39,7 @@ const GridP3D = Tuple{Array{Float64,1},Array{Float64,1},Array{Float64,1}}
 struct FullKIndices_cP{Ind<:Union{Ind2D, Ind3D}} <: FullKIndices{Base.Iterators.ProductIterator{Ind}} 
     grid::Base.Iterators.ProductIterator{Ind}
 end
-collect(indices::FullKIndices_cP) = collect(indices.ind)
+collect(indices::FullKIndices_cP) = collect(indices.grid)
 
 struct FullKPoints_cP{gInd<:Union{GridP2D, GridP3D}} <: FullKPoints{Base.Iterators.ProductIterator{gInd}} 
     grid::Base.Iterators.ProductIterator{gInd}
@@ -66,7 +66,7 @@ const rGridP2D = Tuple{Float64,Float64}
 const rGridP3D = Tuple{Float64,Float64,Float64}
 
 struct ReducedKIndices_cP{Ind<:Union{rInd2D, rInd3D}} <: ReducedKIndices{Array{Ind,1}} 
-    ind::Array{Ind,1}
+    grid::Array{Ind,1}
 end
 
 struct ReducedKPoints_cP{gInd<:Union{rGridP2D, rGridP3D}} <: ReducedKPoints{Array{gInd,1}} 
@@ -161,25 +161,6 @@ end
 
 
 """
-    expand(kGrid::ReducedKGrid_cP [,target::Array{T,1}) 
-
-Wrapper function to expand reduced kGrid to FullkGrid.
-Provided with an aditional array containing data on this grid,
-this function also expands the data back to the full grid.
-"""
-function expand(kGrid::ReducedKGrid_cP)
-    kInd::
-    kMult::Array{rInd3D,1}
-    kGrid::Array{rGridP3D,1}
-    ReducedKGrid_cP(Nk(kGrid), kGrid |> indices |> collect |> reduce_kGrid,
-                               kGrid |> gridPoints |> collect |> reduce_kGrid)
-end
-
-function expand(kGrid::ReducedKGrid_cP, target::Array{T,1} = nothing)  where T <: Number
-end
-
-
-"""
     expand_kGrid(reducedInd, reducedArr)
 
 Expands arbitrary Array on reduced k-Grid back to full grid.
@@ -190,7 +171,8 @@ reducedInd indicates uncomplete grid (by having no (1,1,1) index).
     mapslices(x->expand_kGrid(qIndices, x, simParams.Nk),sdata(bubble), dims=[2])
 ```
 """
-function expand_kGrid(reducedInd::Array{rInd3D,1}, reducedArr::Array{T,1}) where T
+function expand_kGrid(kGrid, reducedArr::Array{T,1}) where T
+#reducedInd::Union{Array{rInd3D,1},Array{rInd2D,1}},
     D = length(reducedInd[1])
     Nk = maximum(maximum.(reducedInd))
     newArr = Array{eltype(reducedArr)}(undef, (Nk*ones(Int64, D))...)
@@ -211,11 +193,11 @@ Compute multiplicity for each k point over a given index
 array of a reduced kGrid.
 """
 function multiplicity(kIndices::ReducedKIndices_cP)
-    min_ind = minimum(kIndices.ind)
-    max_ind = maximum(kIndices.ind)
+    min_ind = minimum(kIndices.grid)
+    max_ind = maximum(kIndices.grid)
     borderFactor(el) = prod((el[i] == min_ind[i] || el[i] == max_ind[i]) ? 0.5 : 1.0 for i in 1:length(min_ind))
-    length(min_ind) == 2 ? map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices.ind) :
-            map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices.ind)
+    length(min_ind) == 2 ? map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices.grid) :
+            map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices.grid)
 end
 
 # ---------------------------- Mirror Symmetry -------------------------------
