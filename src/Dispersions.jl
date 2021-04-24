@@ -3,7 +3,7 @@ using Combinatorics
 
 export KGrid, FullKGrid, ReducedKGrid
 export gridPoints, Nk
-export reduceKGrid, expandKGrid_
+export reduceKGrid, expandKGrid
 
 export gen_cP_kGrid
 

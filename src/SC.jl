@@ -39,13 +39,14 @@ Fields
 """
 struct FullKGrid_cP_2D  <: FullKGrid{cP_2D}
     Nk::Int
+    Ns::Int
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
     t::Float64
     function FullKGrid_cP_2D(Nk::Int, t::Float64)
         kx = [(2*π/Nk) * j - π for j in 1:Nk]
         kGrid  = collect(Base.product([kx for Di in 1:2]...))[:]
-        new(Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t)
+        new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t)
     end
 end
 
@@ -87,21 +88,21 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
-    s = [trunc(Int,sqrt(kG.Nk)) for i in 1:2]
-    grid_tmp = cut_mirror(reshape(kG.kGrid), s)
-    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s))
-    ind = cut_mirror(collect(Base.product([1:lengtH(grid_tmp) for Di in 1:2]...)))
+    s = [kG.Ns for i in 1:2]
+    grid_tmp = cut_mirror(reshape(kG.kGrid, s...))
+    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s...))
+    ind = cut_mirror(collect(Base.product([1:kG.Ns for Di in 1:2]...)))
 
-    index = [[x,y] for x=1:length(ind) for y=1:x]
+    index = [[x,y] for x=1:size(ind,1) for y=1:x]
 
     ind_red = GridInd2D(undef, length(index))
     grid_red = GridPoints2D(undef, length(index))
-    ϵk_red = GridPoints2D(undef, length(index))
+    ϵk_red = GridDisp(undef, length(index))
 
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
-        grid_red[i] = kG.kGrid[ti...]
-        ϵk_red[i] = kG.ϵkGrid[ti...]
+        grid_red[i] = grid_tmp[ti...]
+        ϵk_red[i] = ϵk_tmp[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
     return ReducedKGrid_cP_2D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
@@ -113,14 +114,14 @@ end
 """
 function expandKGrid(kG::ReducedKGrid{cP_2D}, arr::Array)
     N = maximum(maximum.(kG.kInd))
-    newArr = Array{eltype(reducedArr)}(undef, (N*ones(Int64, 2))...)
+    newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 2))...)
     for (ri, redInd) in enumerate(kG.kInd)
         perms = unique(collect(permutations(redInd)))
         for p in perms
-            newArr[p...] = reducedArr[ri]
+            newArr[p...] = arr[ri]
         end
     end
-    minimum(minimum.(reducedInd)) > 1 && expand_mirror!(newArr)
+    minimum(minimum.(kG.kInd)) > 1 && expand_mirror!(newArr)
     return newArr
 end
 
@@ -155,13 +156,14 @@ Fields
 """
 struct FullKGrid_cP_3D  <: FullKGrid{cP_3D}
     Nk::Int
-    kGrid::GridPoints2D
+    Ns::Int
+    kGrid::GridPoints3D
     ϵkGrid::GridDisp
     t::Float64
-    function FullKGrid_cP_3D(Nk::Int)
+    function FullKGrid_cP_3D(Nk::Int, t::Float64)
         kx = [(2*π/Nk) * j - π for j in 1:Nk];
         kGrid  = collect(Base.product([kx for Di in 1:3]...))[:]
-        new(Nk, kGrid, gen_ϵkGrid(cP_3D,kGrid,t),t)
+        new(Nk^3, Nk, kGrid, gen_ϵkGrid(cP_3D,kGrid,t),t)
     end
 end
 
@@ -190,20 +192,20 @@ end
 gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> t*(cos(kᵢ[1]+kᵢ[2]+kᵢ[3])), kGrid))
 
 function reduceKGrid(kG::FullKGrid{cP_3D})
-    s = [trunc(Int,kG.Nk^(1/3)) for i in 1:3]
-    grid_tmp = cut_mirror(reshape(kG.kGrid), s)
-    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s))
-    ind = cut_mirror(collect(Base.product([1:lengtH(grid_tmp) for Di in 1:3]...)))
+    s = [kG.Ns for i in 1:3]
+    grid_tmp = cut_mirror(reshape(kG.kGrid, s...))
+    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s...))
+    ind = cut_mirror(collect(Base.product([1:kG.Ns for Di in 1:3]...)))
 
-    index = [[x,y,z] for x=1:length(ind) for y=1:x for z = 1:y]
+    index = [[x,y,z] for x=1:size(ind,1) for y=1:x for z = 1:y]
     ind_red = GridInd3D(undef, length(index))
     grid_red = GridPoints3D(undef, length(index))
-    ϵk_red = GridPoints3D(undef, length(index))
+    ϵk_red = GridDisp(undef, length(index))
 
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
-        grid_red[i] = kG.kGrid[ti...]
-        ϵk_red[i] = kG.ϵkGrid[ti...]
+        grid_red[i] = grid_tmp[ti...]
+        ϵk_red[i] = ϵk_tmp[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
     return ReducedKGrid_cP_3D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
@@ -211,14 +213,14 @@ end
 
 function expandKGrid(kG::ReducedKGrid{cP_3D}, arr::Array)
     N = maximum(maximum.(kG.kInd))
-    newArr = Array{eltype(reducedArr)}(undef, (N*ones(Int64, 3))...)
+    newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 3))...)
     for (ri, redInd) in enumerate(kG.kInd)
         perms = unique(collect(permutations(redInd)))
         for p in perms
-            newArr[p...] = reducedArr[ri]
+            newArr[p...] = arr[ri]
         end
     end
-    minimum(minimum.(reducedInd)) > 1 && expand_mirror!(newArr)
+    minimum(minimum.(kG.kInd)) > 1 && expand_mirror!(newArr)
     return newArr
 end
 
