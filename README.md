@@ -3,7 +3,7 @@ This project is inteded to be used as a backend for k grid related operations in
 
 |     Build Status    |      Coverage      |  Documentation |      Social    |
 | ------------------- |:------------------:| :-------------:| :-------------:|
-| [![Build Status](https://github.com/Atomtomate/Dispersions.jl/workflows/CI/badge.svg)](https://github.com/Atomtomate/Dispersions.jl/actions) | [![Coverage](https://codecov.io/gh/Atomtomate/Dispersions.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Atomtomate/Dispersions.jl) | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Atomtomate.github.io/Dispersions.jl/stable) |[![Gitter](https://badges.gitter.im/JuliansBastelecke/EquivalenceClasses.svg)](https://gitter.im/JuliansBastelecke/EquivalenceClasses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) |
+| [![Build Status](https://github.com/Atomtomate/Dispersions.jl/workflows/CI/badge.svg)](https://github.com/Atomtomate/Dispersions.jl/actions) | [![codecov](https://codecov.io/gh/Atomtomate/Dispersions.jl/branch/master/graph/badge.svg?token=FbJKjHb7DW)](https://codecov.io/gh/Atomtomate/Dispersions.jl) | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Atomtomate.github.io/Dispersions.jl/stable) |[![Gitter](https://badges.gitter.im/JuliansBastelecke/EquivalenceClasses.svg)](https://gitter.im/JuliansBastelecke/EquivalenceClasses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) |
 
 # Overview
 
