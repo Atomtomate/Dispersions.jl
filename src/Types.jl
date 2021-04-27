@@ -55,7 +55,7 @@ Returns the grid on the fully irredrucible BZ.
 """
 reduceKGrid(kGrid::FullKGrid{T}) where T <: KGridType = throw(MethodError("KGrid Instance not found")) 
 
-expandKGrid(kGrid::FullKGrid{T}, arr::Array) where T <: KGridType = throw(MethodError("KGrid Instance not found")) 
+expandKArr(kGrid::ReducedKGrid{T}, arr::Array) where T <: KGridType = throw(MethodError("KGrid Instance not found")) 
 
 
 # ------------------------------ Private Functions -----------------------------

@@ -44,6 +44,7 @@ struct FullKGrid_cP_2D  <: FullKGrid{cP_2D}
     ϵkGrid::GridDisp
     t::Float64
     function FullKGrid_cP_2D(Nk::Int, t::Float64)
+        #isodd(Nk) && throw(ArgumentError("Only implemented for even k grids"))
         kx = [(2*π/Nk) * j - π for j in 1:Nk]
         kGrid  = collect(Base.product([kx for Di in 1:2]...))[:]
         new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t)
@@ -112,7 +113,7 @@ end
 """
 
 """
-function expandKGrid(kG::ReducedKGrid{cP_2D}, arr::Array)
+function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array)
     N = maximum(maximum.(kG.kInd))
     newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 2))...)
     for (ri, redInd) in enumerate(kG.kInd)
@@ -211,7 +212,8 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
     return ReducedKGrid_cP_3D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
 end
 
-function expandKGrid(kG::ReducedKGrid{cP_3D}, arr::Array)
+
+function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
     N = maximum(maximum.(kG.kInd))
     newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 3))...)
     for (ri, redInd) in enumerate(kG.kInd)
@@ -220,15 +222,16 @@ function expandKGrid(kG::ReducedKGrid{cP_3D}, arr::Array)
             newArr[p...] = arr[ri]
         end
     end
-    minimum(minimum.(kG.kInd)) > 1 && expand_mirror!(newArr)
+    minimum(minimum.(kG.kInd)) > 1 && expand_mirror(newArr)
     return newArr
 end
 
 
 # ---------------------------- Auxilliary Functions -------------------------------
+# TODO: avoid reshape
 @inbounds cut_mirror(arr::Base.Iterators.ProductIterator) = cut_mirror(collect(arr))
-@inbounds cut_mirror(arr::Array{T, 2}) where T = arr[Int(size(arr,1)/2):end, Int(size(arr,2)/2):end]
-@inbounds cut_mirror(arr::Array{T, 3}) where T = arr[Int(size(arr,1)/2):end, Int(size(arr,2)/2):end, Int(size(arr,3)/2):end]
+@inbounds cut_mirror(arr::Array{T, 2}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end]
+@inbounds cut_mirror(arr::Array{T, 3}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end, ceil(Int,size(arr,3)/2):end]
 #reverse cut. This is a helper function to avoid reversing the array after fft-convolution trick. assumes reserved input and returns correct array including cut
 @inbounds ifft_cut_mirror(arr::Base.Iterators.ProductIterator) = ifft_cut_mirror(collect(arr))
 @inbounds ifft_cut_mirror(arr::Array{T, 2}) where T = arr[end-1:-1:Int64(size(arr,1)/2-1), 
@@ -237,29 +240,69 @@ end
                                                           end-1:-1:Int64(size(arr,2)/2-1), 
                                                           end-1:-1:Int64(size(arr,3)/2-1)]
 
-
-function expand_mirror!(arr::Array{T, 2}) where T 
-    al = Int(size(arr,1)/2) - 1
-
-    arr[1:al,al+1:end] = arr[end-1:-1:al+2,al+1:end]
-    arr[1:end,1:al] = arr[1:end,end-1:-1:al+2,]
-    for i in 1:al
-        arr[i,i] = arr[end-i,end-i]
-    end
+function expand_mirror(kInd::Vector{Tuple{Int,Int}}, arr::Array{T, 1}) where T
+    s = Int(sqrt(length(arr)))
+    return expand_mirror(reshape(arr,s,s))
 end
 
-function expand_mirror!(arr::Array{T, 3}) where T
-    al = Int(size(arr,1)/2) - 1
+function expand_mirror(kInd::Vector{Tuple{Int,Int}}, arr::Array{T, 2}) where T 
+    ns = size(arr,1)
+    nmax = kInd[end][1]
+    al = ceil(Int,nmax/2)
 
-    arr[1:al,al+1:end,al+1:end] = arr[end-1:-1:al+2,al+1:end,al+1:end]
-    arr[1:end,1:al,al+1:end] = arr[1:end,end-1:-1:al+2,al+1:end]
-    for i in 1:al
-        arr[i,i,al+1:end] = arr[end-i,end-i,al+1:end]
+    new_arr = Array{T,2}(undef, kInd[end])
+
+    new_arr[al:end, al:end] = arr
+    new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end] = arr[end-1:-1:iseven(nmax)+1,1:end]
+    new_arr[1:end,1:al-1] = new_arr[1:end,end-1:-1:al+iseven(nmax)]
+
+    return new_arr
+end
+
+function expand_mirror(kInd::Vector{Tuple{Int,Int,Int}}, arr::Array{T, 3}) where T
+    ns = size(arr,1)
+    nmax = kInd[end][1]
+    al = ceil(Int,nmax/2)
+    println(al)
+
+    new_arr = collect(convert(Array{Float64,3},reshape(1:length(zeros(kInd[end])),kInd[end])))# Array{T,3}(undef, kInd[end])
+    #new_arr = zeros(Int, kInd[end])
+
+    new_arr[al:end, al:end, al:end] = arr
+
+    println("====")
+    display(new_arr)
+    for ki in kInd
+        kn = nmax .- ki
+        println("$ki to $kn")
+        if all(kn .> 0) && all(kn .<= nmax)
+            println("copying $(new_arr[ki...])")
+            new_arr[kn...] = new_arr[ki...]
+        end
     end
-    arr[1:end,1:end,1:al] .= arr[1:end,1:end,end-1:-1:al+2]
-    for i in 1:al
-        arr[i,i,i] = arr[end-i,end-i,end-i]
-    end
+    display(new_arr)
+    #display(arr[end-1:-1:1+iseven(nmax),1:end,1:end])
+    #display(new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end,ns-iseven(nmax):end])
+    println("====")
+    #1:ns-1-iseven(nmax),1:ns-1-iseven(nmax),ns-iseven(nmax):end
+    #new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end,end] = arr[iseven(nmax)+1:end-1,1:end,1]
+    #new_arr[1:end,1:al-1] = new_arr[1:end,end-1:-1:al+iseven(nmax)]
+
+    #println(arr[end-1:-1:iseven(nmax)+1,end-1:-1:iseven(nmax)+1,1:end])
+    #new_arr[1:ns-1-iseven(nmax),1:ns-1-iseven(nmax),ns-iseven(nmax):end] = arr[end-1:-1:iseven(nmax)+1,end-1:-1:iseven(nmax)+1,1:end]
+
+    #al = Int(size(arr,1)/2) - 1
+
+    #arr[1:al,al+1:end,al+1:end] = arr[end-1:-1:al+2,al+1:end,al+1:end]
+    #arr[1:end,1:al,al+1:end] = arr[1:end,end-1:-1:al+2,al+1:end]
+    #for i in 1:al
+    #    arr[i,i,al+1:end] = arr[end-i,end-i,al+1:end]
+    #end
+    #arr[1:end,1:end,1:al] .= arr[1:end,1:end,end-1:-1:al+2]
+    #for i in 1:al
+    #    arr[i,i,i] = arr[end-i,end-i,end-i]
+    #end
+    return new_arr
 end
 
 
