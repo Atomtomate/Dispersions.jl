@@ -1,21 +1,25 @@
-using Documenter
 push!(LOAD_PATH,"../src/")
-include("../src/Dispersions.jl")
-using .Dispersions
+using Dispersions
+using Documenter
 
 makedocs(
-    sitename = "Dispersions.jl",
-    format = Documenter.HTML(),
     modules = [Dispersions],
-    pages = ["index.md"
+    sitename = "Dispersions.jl",
+    authors="Julian Stobbe <Atomtomate@gmx.de> and contributors",
+    repo="https://github.com/Atomtomate/SeriesAcceleration.jl/blob/{commit}{path}#L{line}",
+    format=Documenter.HTML(;
+        prettyurls=get(ENV, "CI", nothing) == "true",
+        canonical="https://Atomtomate.github.io/Dispersions.jl",
+        assets=String[],
+    ),
+    pages = ["Home" => "index.md"
              "Interface" => "interface.md"
             ]
 )
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
+
 deploydocs(
-    repo = "github.com/Atomtomate/Dispersions.jl.git",
+    branch="gh-pages",
     devbranch = "master",
-    devurl = "stable"
+    devurl = "stable",
+    repo = "github.com/Atomtomate/Dispersions.jl.git"
 )
