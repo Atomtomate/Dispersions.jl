@@ -34,6 +34,8 @@ end
         gr3 = gen_cP_kGrid(NN,3,1.3)
         gr2_r = reduceKGrid(gr2)
         gr3_r = reduceKGrid(gr3)
+        @test all(reduceKArr(gr2_r, reshape(gr2.ϵkGrid,(NN,NN))) .≈ gr2_r.ϵkGrid)
+        @test all(reduceKArr(gr3_r, reshape(gr3.ϵkGrid,(NN,NN,NN))) .≈ gr3_r.ϵkGrid)
         ek2 = reshape(gr2.ϵkGrid, (NN,NN))
         ek3 = reshape(gr3.ϵkGrid, (NN,NN,NN))
         gr2_cut = Dispersions.cut_mirror(ek2)

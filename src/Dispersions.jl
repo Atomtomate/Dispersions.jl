@@ -9,7 +9,7 @@ export KGrid, FullKGrid, ReducedKGrid
 export gridPoints, Nk
 
 # grid functions
-export reduceKGrid, expandKArr
+export reduceKGrid, reduceKArr, expandKArr
 
 # grids 
 export gen_cP_kGrid

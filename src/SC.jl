@@ -109,7 +109,6 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
     return ReducedKGrid_cP_2D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
 end
 
-
 """
     expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1}) where {T1 <: Union{cP_2D,cP_3D}, T2 <: Any
 
@@ -228,6 +227,16 @@ function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
     expand_mirror!(newArr)
     return newArr
 end
+
+
+function reduceKArr(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
+    res = Array{eltype(arr), 1}(undef, length(kG.kInd))
+    for (i,ki) in enumerate(kG.kInd)
+        res[i] = arr[ki...]
+    end
+    return res
+end
+
 
 
 # ---------------------------- Auxilliary Functions -------------------------------
