@@ -2,6 +2,7 @@
 #                                   Type Defs                                      #
 # ================================================================================ #
 
+# ------------------------------------ Grids -----------------------------------
 abstract type KGridType end
 abstract type KGrid{T <: KGridType} end
 abstract type FullKGrid{T} <: KGrid{T} end
@@ -25,6 +26,7 @@ struct IsGridInd{T} end
 isGridInd(::T) where {T}  = Not{IsGridInd{T}}
 isGridInd(::GridInd2D) = IsGridInd{GridInd2D}
 isGridInd(::GridInd3D) = IsGridInd{GridInd3D}
+
 
 # ================================================================================ #
 #                                   Interface                                      #

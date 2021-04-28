@@ -7,3 +7,6 @@ using Dispersions
     #include("./IO_SC.jl")    
 end
 
+@testset "BZ Integration" begin
+    include("./BZIntegration.jl")
+end

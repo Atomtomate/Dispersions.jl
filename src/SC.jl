@@ -113,7 +113,7 @@ end
 """
     expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1}) where {T1 <: Union{cP_2D,cP_3D}, T2 <: Any
 
-E
+Expands array of values on reduced k grid back to full BZ.
 """
 function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
