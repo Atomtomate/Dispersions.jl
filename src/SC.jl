@@ -111,9 +111,12 @@ end
 
 
 """
+    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1}) where {T1 <: Union{cP_2D,cP_3D}, T2 <: Any
 
+E
 """
-function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array)
+function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
+    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
     N = maximum(maximum.(kG.kInd))
     newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 2))...)
     for (ri, redInd) in enumerate(kG.kInd)
@@ -190,7 +193,6 @@ struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     ϵkGrid::GridDisp
 end
 
-gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> t*(cos(kᵢ[1]+kᵢ[2]+kᵢ[3])), kGrid))
 
 function reduceKGrid(kG::FullKGrid{cP_3D})
     s = [kG.Ns for i in 1:3]
@@ -214,6 +216,7 @@ end
 
 
 function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
+    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
     N = maximum(maximum.(kG.kInd))
     newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 3))...)
     for (ri, redInd) in enumerate(kG.kInd)
@@ -222,7 +225,7 @@ function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
             newArr[p...] = arr[ri]
         end
     end
-    minimum(minimum.(kG.kInd)) > 1 && expand_mirror(newArr)
+    expand_mirror!(newArr)
     return newArr
 end
 
@@ -240,69 +243,39 @@ end
                                                           end-1:-1:Int64(size(arr,2)/2-1), 
                                                           end-1:-1:Int64(size(arr,3)/2-1)]
 
-function expand_mirror(kInd::Vector{Tuple{Int,Int}}, arr::Array{T, 1}) where T
-    s = Int(sqrt(length(arr)))
-    return expand_mirror(reshape(arr,s,s))
+
+function expand_mirror!(arr::Array{T, 2}) where T 
+    N = size(arr,1)
+    al = ceil(Int,N/2)
+
+    arr[1:al-1,al:end] = arr[end-1:-1:iseven(N)+al,al:end]
+    arr[1:end,1:al-1] = arr[1:end,end-1:-1:al+iseven(N)]
+
+    return arr
 end
 
-function expand_mirror(kInd::Vector{Tuple{Int,Int}}, arr::Array{T, 2}) where T 
-    ns = size(arr,1)
-    nmax = kInd[end][1]
-    al = ceil(Int,nmax/2)
+function expand_mirror!(arr::Array{T, 3}) where T
+    N = size(arr,1)
+    al = ceil(Int,N/2)
 
-    new_arr = Array{T,2}(undef, kInd[end])
-
-    new_arr[al:end, al:end] = arr
-    new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end] = arr[end-1:-1:iseven(nmax)+1,1:end]
-    new_arr[1:end,1:al-1] = new_arr[1:end,end-1:-1:al+iseven(nmax)]
-
-    return new_arr
-end
-
-function expand_mirror(kInd::Vector{Tuple{Int,Int,Int}}, arr::Array{T, 3}) where T
-    ns = size(arr,1)
-    nmax = kInd[end][1]
-    al = ceil(Int,nmax/2)
-    println(al)
-
-    new_arr = collect(convert(Array{Float64,3},reshape(1:length(zeros(kInd[end])),kInd[end])))# Array{T,3}(undef, kInd[end])
-    #new_arr = zeros(Int, kInd[end])
-
-    new_arr[al:end, al:end, al:end] = arr
-
-    println("====")
-    display(new_arr)
-    for ki in kInd
-        kn = nmax .- ki
-        println("$ki to $kn")
-        if all(kn .> 0) && all(kn .<= nmax)
-            println("copying $(new_arr[ki...])")
-            new_arr[kn...] = new_arr[ki...]
+    Nl = N - al
+    # copy values along anti-diagonals
+    for ll in al:N 
+        for i in 0:Nl-1
+            for j in 1:N-1
+                arr[ll,mod1(al-j,N),mod1(al+j+i,N)] = arr[ll,mod1(al,N),mod1(al+i,N)]
+            end
+        end
+        for i in 0:Nl
+            for j in 1:(N-i-1)
+                arr[ll,N-i-j,j] = arr[ll,N-i,N]
+            end
         end
     end
-    display(new_arr)
-    #display(arr[end-1:-1:1+iseven(nmax),1:end,1:end])
-    #display(new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end,ns-iseven(nmax):end])
-    println("====")
-    #1:ns-1-iseven(nmax),1:ns-1-iseven(nmax),ns-iseven(nmax):end
-    #new_arr[1:ns-1-iseven(nmax),ns-iseven(nmax):end,end] = arr[iseven(nmax)+1:end-1,1:end,1]
-    #new_arr[1:end,1:al-1] = new_arr[1:end,end-1:-1:al+iseven(nmax)]
-
-    #println(arr[end-1:-1:iseven(nmax)+1,end-1:-1:iseven(nmax)+1,1:end])
-    #new_arr[1:ns-1-iseven(nmax),1:ns-1-iseven(nmax),ns-iseven(nmax):end] = arr[end-1:-1:iseven(nmax)+1,end-1:-1:iseven(nmax)+1,1:end]
-
-    #al = Int(size(arr,1)/2) - 1
-
-    #arr[1:al,al+1:end,al+1:end] = arr[end-1:-1:al+2,al+1:end,al+1:end]
-    #arr[1:end,1:al,al+1:end] = arr[1:end,end-1:-1:al+2,al+1:end]
-    #for i in 1:al
-    #    arr[i,i,al+1:end] = arr[end-i,end-i,al+1:end]
-    #end
-    #arr[1:end,1:end,1:al] .= arr[1:end,1:end,end-1:-1:al+2]
-    #for i in 1:al
-    #    arr[i,i,i] = arr[end-i,end-i,end-i]
-    #end
-    return new_arr
+    for ll in al-1:-1:1
+        arr[ll,:,:] = circshift(arr[ll+1,:,:],(1,0))
+    end
+    return arr
 end
 
 
@@ -330,3 +303,5 @@ function kGrid_multiplicity_cP(kIndices)
     end
     return res
 end
+
+gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> t*(cos(kᵢ[1]+kᵢ[2]+kᵢ[3])), kGrid))

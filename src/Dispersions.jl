@@ -1,4 +1,5 @@
 module Dispersions
+
 using Combinatorics
 
 export KGrid, FullKGrid, ReducedKGrid
