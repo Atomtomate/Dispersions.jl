@@ -9,7 +9,7 @@ abstract type KSpaceIntegrator end
 struct KSum <: KSpaceIntegrator end
 
 
-function kintegrate(grid::Nothing, arr::AbstractArray) = arr
+kintegrate(grid::Nothing, arr::AbstractArray) = arr
 
 function kintegrate(grid::T1, arr::AbstractArray; type::T2 = KSum()) where {T1 <: ReducedKGrid, T2 <: KSum}
     return sum(grid.kMult .* arr)/sum(grid.kMult)
