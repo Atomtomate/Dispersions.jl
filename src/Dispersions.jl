@@ -12,7 +12,7 @@ export gridPoints, Nk
 export reduceKGrid, reduceKArr, expandKArr
 
 # grids 
-export gen_cP_kGrid
+export gen_cP_kGrid, cP_2D, cP_3D
 
 # sum types
 export KSum
