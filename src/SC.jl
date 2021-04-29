@@ -66,6 +66,7 @@ Fields
 """
 struct ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
     Nk::Int
+    Ns::Int
     kInd::GridInd2D
     kMult::Array{Float64,1}
     kGrid::GridPoints2D
@@ -106,7 +107,7 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
         ϵk_red[i] = ϵk_tmp[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
-    return ReducedKGrid_cP_2D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
+    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
 end
 
 """
@@ -186,6 +187,7 @@ Fields
 """
 struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     Nk::Int
+    Ns::Int
     kInd::GridInd3D
     kMult::Array{Float64,1}
     kGrid::GridPoints3D
@@ -210,7 +212,7 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
         ϵk_red[i] = ϵk_tmp[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
-    return ReducedKGrid_cP_3D(kG.Nk, ind_red, kmult, grid_red, ϵk_red)
+    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
 end
 
 
