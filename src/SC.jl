@@ -91,11 +91,13 @@ is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
     s = [kG.Ns for i in 1:2]
-    grid_tmp = cut_mirror(reshape(kG.kGrid, s...))
-    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s...))
-    ind = cut_mirror(collect(Base.product([1:kG.Ns for Di in 1:2]...)))
+    kGrid = reshape(kG.kGrid, s...)
+    ϵkGrid = reshape(kG.ϵkGrid, s...)
+    ind = collect(Base.product([1:kG.Ns for Di in 1:2]...))
 
-    index = [[x,y] for x=1:size(ind,1) for y=1:x]
+    ll = floor(Int,size(kGrid,1)/2 + 1)
+    la = ceil(Int,kG.Ns/2) .- 1
+    index = [[x + la, y + la]  for x=1:ll for y=1:x]
 
     ind_red = GridInd2D(undef, length(index))
     grid_red = GridPoints2D(undef, length(index))
@@ -103,8 +105,8 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
 
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
-        grid_red[i] = grid_tmp[ti...]
-        ϵk_red[i] = ϵk_tmp[ti...]
+        grid_red[i] = kGrid[ti...]
+        ϵk_red[i] = ϵkGrid[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
     return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
@@ -194,22 +196,23 @@ struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     ϵkGrid::GridDisp
 end
 
-
 function reduceKGrid(kG::FullKGrid{cP_3D})
     s = [kG.Ns for i in 1:3]
-    grid_tmp = cut_mirror(reshape(kG.kGrid, s...))
-    ϵk_tmp = cut_mirror(reshape(kG.ϵkGrid, s...))
-    ind = cut_mirror(collect(Base.product([1:kG.Ns for Di in 1:3]...)))
+    kGrid = reshape(kG.kGrid,s...)
+    ϵkGrid = reshape(kG.ϵkGrid,s...)
+    ind = collect(Base.product([1:kG.Ns for Di in 1:3]...))
 
-    index = [[x,y,z] for x=1:size(ind,1) for y=1:x for z = 1:y]
+    ll = floor(Int,size(kGrid,1)/2 + 1)
+    la = ceil(Int,kG.Ns/2) .- 1
+    index = [[x+la,y+la,z+la] for x=1:ll for y=1:x for z = 1:y]
     ind_red = GridInd3D(undef, length(index))
     grid_red = GridPoints3D(undef, length(index))
     ϵk_red = GridDisp(undef, length(index))
 
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
-        grid_red[i] = grid_tmp[ti...]
-        ϵk_red[i] = ϵk_tmp[ti...]
+        grid_red[i] = kGrid[ti...]
+        ϵk_red[i] = ϵkGrid[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
     return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
@@ -239,21 +242,17 @@ function reduceKArr(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union
     return res
 end
 
-
-
-# ---------------------------- Auxilliary Functions -------------------------------
-# TODO: avoid reshape
-@inbounds cut_mirror(arr::Base.Iterators.ProductIterator) = cut_mirror(collect(arr))
-@inbounds cut_mirror(arr::Array{T, 2}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end]
-@inbounds cut_mirror(arr::Array{T, 3}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end, ceil(Int,size(arr,3)/2):end]
-#reverse cut. This is a helper function to avoid reversing the array after fft-convolution trick. assumes reserved input and returns correct array including cut
-@inbounds ifft_cut_mirror(arr::Base.Iterators.ProductIterator) = ifft_cut_mirror(collect(arr))
-@inbounds ifft_cut_mirror(arr::Array{T, 2}) where T = arr[end-1:-1:Int64(size(arr,1)/2-1), 
-                                                          end-1:-1:Int64(size(arr,2)/2-1)]
-@inbounds ifft_cut_mirror(arr::Array{T, 3}) where T = arr[end-1:-1:Int64(size(arr,1)/2-1), 
-                                                          end-1:-1:Int64(size(arr,2)/2-1), 
-                                                          end-1:-1:Int64(size(arr,3)/2-1)]
-
+#TODO: this is a placeholder until convolution is ported from lDGA code
+function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
+    res =  Array{eltype(arr)}(undef, length(kG.kInd))
+    N = size(arr)
+    ll = floor(Int,size(arr,1)/2 + 1)
+    index = T1 === cP_2D ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
+    for (i,ti) in enumerate(index)
+        res[i] = arr[(N .- ti)...]
+    end
+    return res
+end
 
 function expand_mirror!(arr::Array{T, 2}) where T 
     N = size(arr,1)
