@@ -90,6 +90,9 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
+    #if kG.Nk == 1
+    #    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
+    #end
     s = [kG.Ns for i in 1:2]
     kGrid = reshape(kG.kGrid, s...)
     ϵkGrid = reshape(kG.ϵkGrid, s...)

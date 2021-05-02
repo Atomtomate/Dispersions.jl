@@ -57,7 +57,7 @@ end
 end
 
 @testset "reduce_expand" begin
-    for NN in 2:16
+    for NN in 1:16
         gr2 = gen_cP_kGrid(NN,2,1.3)
         gr3 = gen_cP_kGrid(NN,3,1.3)
         gr2_r = reduceKGrid(gr2)
@@ -85,7 +85,7 @@ end
 
 #TODO: this is a placeholder until convolution is ported from lDGA code
 @testset "ifft" begin
-    for NN in 4:2:6
+    for NN in 4:2:12
         gr2 = gen_cP_kGrid(NN,2,1.3)
         gr3 = gen_cP_kGrid(NN,3,1.3)
         arr2 = randn(NN,NN)

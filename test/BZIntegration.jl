@@ -1,5 +1,5 @@
 @testset "KSum" begin
-    for NN in 2:3
+    for NN in 1:8
         gr2 = gen_cP_kGrid(NN,2,1.3)
         gr3 = gen_cP_kGrid(NN,3,1.3)
         gr2_r = reduceKGrid(gr2)
