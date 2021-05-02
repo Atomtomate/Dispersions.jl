@@ -1,6 +1,8 @@
 using Test
 
 using Dispersions
+
+include("./helper_functions.jl")
 @testset "SC" begin
     include("./Types.jl")
     include("./SC.jl")    

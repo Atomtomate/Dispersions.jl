@@ -247,7 +247,7 @@ function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 
     ll = floor(Int,size(arr,1)/2 + 1)
     index = T1 === cP_2D ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
     for (i,ti) in enumerate(index)
-        res[i] = arr[(N .- ti .+ 1)...]
+        res[i] = arr[(N .- ti)...]
     end
     return res
 end
@@ -264,24 +264,17 @@ end
 
 function expand_mirror!(arr::Array{T, 3}) where T
     N = size(arr,1)
-    al = ceil(Int,N/2)
+    al = ceil(Int,N/2) - 1
+    ne = Int(iseven(N))
 
-    Nl = N - al
-    # copy values along anti-diagonals
-    for ll in al:N 
-        for i in 0:Nl-1
-            for j in 1:N-1
-                arr[ll,mod1(al-j,N),mod1(al+j+i,N)] = arr[ll,mod1(al,N),mod1(al+i,N)]
-            end
-        end
-        for i in 0:Nl
-            for j in 1:(N-i-1)
-                arr[ll,N-i-j,j] = arr[ll,N-i,N]
-            end
-        end
+    arr[1:al,al+1:end,al+1:end] = arr[end-1:-1:al+1+ne,al+1:end,al+1:end]
+    arr[:,1:al,al+1:end] = arr[:,end-1:-1:al+1+ne,al+1:end]
+    for i in 1:al
+        arr[i,i,al+1:end] = arr[end-i,end-i,al+1:end]
     end
-    for ll in al-1:-1:1
-        arr[ll,:,:] = circshift(arr[ll+1,:,:],(1,0))
+    arr[:,:,1:al] .= arr[:,:,end-1:-1:al+1+ne]
+    for i in 1:al
+        arr[i,i,i] = arr[end-i,end-i,end-i]
     end
     return arr
 end
@@ -314,3 +307,12 @@ end
 
 gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
+
+
+#TODO: interface should be conv_transform(grid, arr1, arr2) with this one optional
+@inline function conv_transform(grid::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64},1})
+    reshape(arr, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
+end
+@inline function conv_transform(grid::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64},1})
+    reshape(arr, grid.Ns, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
+end

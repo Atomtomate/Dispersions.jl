@@ -1,32 +1,5 @@
 using Base.Iterators
 
-# ---------------------------- Auxilliary Functions -------------------------------
-# TODO: avoid reshape
-cut_mirror(arr::Base.Iterators.ProductIterator) = cut_mirror(collect(arr))
-cut_mirror(arr::Array{T, 2}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end]
-cut_mirror(arr::Array{T, 3}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end, ceil(Int,size(arr,3)/2):end]
-#reverse cut. This is a helper function to avoid reversing the array after fft-convolution trick. assumes reserved input and returns correct array including cut
-ifft_cut_mirror(arr::Base.Iterators.ProductIterator) = ifft_cut_mirror(collect(arr))
-ifft_cut_mirror(arr::Array{T, 2}) where T = arr[end-1:-1:Int64(size(arr,1)/2-1), 
-                                                          end-1:-1:Int64(size(arr,2)/2-1)]
-ifft_cut_mirror(arr::Array{T, 3}) where T = arr[end-1:-1:Int64(size(arr,1)/2-1), 
-                                                          end-1:-1:Int64(size(arr,2)/2-1), 
-                                                          end-1:-1:Int64(size(arr,3)/2-1)]
-
-
-function test_cut(arr)
-    arr2 = copy(arr)
-    arr3 = ifft_cut_mirror(arr2)
-    ll = floor(Int,size(arr,1)/2 + 1)
-    index = (ndims(arr)) == 2 ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
-    arr4 = Array{eltype(arr)}(undef, length(index))
-    for (i,ti) in enumerate(index)
-        arr4[i] = arr3[ti...]
-    end
-    return arr4
-end
-
-
 
 @testset "2D" begin
     sc_2d_2 = gen_cP_kGrid(2,2,1.3)
@@ -85,18 +58,21 @@ end
 
 #TODO: this is a placeholder until convolution is ported from lDGA code
 @testset "ifft" begin
-    for NN in 2:2:6
+    tf = reduce_old ∘ ifft_cut_mirror
+    for NN in 3:16
         gr2 = gen_cP_kGrid(NN,2,1.3)
         gr3 = gen_cP_kGrid(NN,3,1.3)
         arr2 = randn(NN,NN)
         arr3 = randn(NN,NN,NN)
-        gr3_r = reduceKGrid(gr3)
         gr2_r = reduceKGrid(gr2)
-        r1 = test_cut(arr2)
-        r2 = test_cut(arr3)
+        gr3_r = reduceKGrid(gr3)
+        #r1 = test_cut(arr2)
+        #r2 = test_cut(arr3)
         r3 = reduceKArr_reverse(gr2_r, arr2)
         r4 = reduceKArr_reverse(gr3_r, arr3)
-        @test all(r1 .≈ r3)
-        @test all(r2 .≈ r4)
+        r5 = tf(arr2)
+        r6 = tf(arr3)
+        @test all(r5 .≈ r3)
+        @test all(r6 .≈ r4)
     end
 end
