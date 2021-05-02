@@ -311,8 +311,10 @@ gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = coll
 
 #TODO: interface should be conv_transform(grid, arr1, arr2) with this one optional
 @inline function conv_transform(grid::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64},1})
+    length(arr) == 1 && return arr
     reshape(arr, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
 end
 @inline function conv_transform(grid::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64},1})
+    length(arr) == 1 && return arr
     reshape(arr, grid.Ns, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
 end
