@@ -247,7 +247,7 @@ function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 
     ll = floor(Int,size(arr,1)/2 + 1)
     index = T1 === cP_2D ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
     for (i,ti) in enumerate(index)
-        res[i] = arr[(N .- ti)...]
+        res[i] = arr[(N .- ti .+ 1)...]
     end
     return res
 end
