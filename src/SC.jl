@@ -44,7 +44,6 @@ struct FullKGrid_cP_2D  <: FullKGrid{cP_2D}
     ϵkGrid::GridDisp
     t::Float64
     function FullKGrid_cP_2D(Nk::Int, t::Float64)
-        #isodd(Nk) && throw(ArgumentError("Only implemented for even k grids"))
         kx = [(2*π/Nk) * j - π for j in 1:Nk]
         kGrid  = collect(Base.product([kx for Di in 1:2]...))[:]
         new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t)
@@ -78,7 +77,6 @@ end
 # -------------------------------------------------------------------------------- #
 
 # ---------------------------- BZ to f. irr. BZ -------------------------------
-gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> t*(cos(kᵢ[1])+cos(kᵢ[2])), kGrid))
 
 """
     reduceKGrid(kG::FullKGrid{T}) where T <: Union{cP_2D, cP_3D}
@@ -90,9 +88,6 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
-    #if kG.Nk == 1
-    #    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
-    #end
     s = [kG.Ns for i in 1:2]
     kGrid = reshape(kG.kGrid, s...)
     ϵkGrid = reshape(kG.ϵkGrid, s...)
@@ -252,7 +247,7 @@ function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 
     ll = floor(Int,size(arr,1)/2 + 1)
     index = T1 === cP_2D ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
     for (i,ti) in enumerate(index)
-        res[i] = arr[(N .- ti .+ 1)...]
+        res[i] = arr[(N .- ti)...]
     end
     return res
 end
@@ -317,4 +312,5 @@ function kGrid_multiplicity_cP(kIndices)
     return res
 end
 
-gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> t*(cos(kᵢ[1]+kᵢ[2]+kᵢ[3])), kGrid))
+gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
+gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))

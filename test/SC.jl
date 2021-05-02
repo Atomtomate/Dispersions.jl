@@ -85,7 +85,7 @@ end
 
 #TODO: this is a placeholder until convolution is ported from lDGA code
 @testset "ifft" begin
-    for NN in 4:2:12
+    for NN in 2:2:6
         gr2 = gen_cP_kGrid(NN,2,1.3)
         gr3 = gen_cP_kGrid(NN,3,1.3)
         arr2 = randn(NN,NN)
