@@ -1,6 +1,7 @@
 module Dispersions
 
 using Combinatorics
+using FFTW
 
 # general types
 export KGrid, FullKGrid, ReducedKGrid
