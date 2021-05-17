@@ -13,7 +13,7 @@ export gridPoints, Nk
 export reduceKGrid, reduceKArr, reduceKArr_reverse, expandKArr, conv_transform
 
 # grids 
-export gen_cP_kGrid, cP_2D, cP_3D
+export gen_kGrid, cP_2D, cP_3D
 
 # sum types
 export KSum
@@ -21,6 +21,7 @@ export KSum
 export kintegrate
 
 
+include("common.jl")
 include("Types.jl")
 include("SC.jl")
 include("BZIntegration.jl")

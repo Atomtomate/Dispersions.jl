@@ -1,6 +1,6 @@
 @testset "type pretty prints" begin
     io = IOBuffer();
-    grid = Dispersions.gen_cP_kGrid(4,2, 1.0)
+    grid = gen_kGrid("2Dsc-1.0",2)
     print(io, ind)
     @test String(take!(io)) == "Index[(1, 1):(4, 4)]: length:16"
     gp = gridPoints(grid)

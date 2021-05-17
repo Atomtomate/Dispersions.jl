@@ -16,7 +16,7 @@ function kintegrate(grid::T1, arr::AbstractArray; dim=1, type::T2 = KSum()) wher
     return mapslices(sub_arr -> sum(grid.kMult .* sub_arr)/sum(grid.kMult), arr, dims=dim)
 end
 
-function kintegrate(grid::T1, arr::AbstractArray; dim=1, type::T2 = KSum()) where {T1 <: FullKGrid, T2 <: KSum}
-    !all(size(grid.ϵkGrid) .== size(arr)) && throw(ArgumentError("Array does not seem to be on a k grid! Size is $(size(arr)) but should be $(size(grid.ϵkGrid))."))
-    return mapslices(sub_arr -> sum(grid.kMult .* sub_arr)/sum(grid.kMult), arr, dims=dim)
-end
+#function kintegrate(grid::T1, arr::AbstractArray; dim=1, type::T2 = KSum()) where {T1 <: FullKGrid, T2 <: KSum}
+#    !all(size(grid.ϵkGrid) .== size(arr)) && throw(ArgumentError("Array does not seem to be on a k grid! Size is $(size(arr)) but should be $(size(grid.ϵkGrid))."))
+#    return mapslices(sub_arr -> sum(grid.kMult .* sub_arr)/sum(grid.kMult), arr, dims=dim)
+#end

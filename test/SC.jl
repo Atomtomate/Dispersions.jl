@@ -2,9 +2,9 @@ using Base.Iterators
 
 
 @testset "2D" begin
-    sc_2d_2 = gen_cP_kGrid(2,2,1.3)
-    sc_2d_3 = gen_cP_kGrid(4,2,1.3)
-    sc_2d_16 = gen_cP_kGrid(16,2,1.4)
+    sc_2d_2 = gen_kGrid("2Dsc-1.3",2)
+    sc_2d_3 = gen_kGrid("2Dsc-1.3",4)
+    sc_2d_16 = gen_kGrid("2Dsc-1.4",16)
     r2 = reduceKGrid(sc_2d_2)
     r3 = reduceKGrid(sc_2d_2)
     r16 = reduceKGrid(sc_2d_16)
@@ -18,8 +18,8 @@ end
 
 
 @testset "3D" begin
-    sc_3d_2 = gen_cP_kGrid(2, 3, 1.2)
-    sc_3d_16 = gen_cP_kGrid(4, 3, 1.1)
+    sc_3d_2 = gen_kGrid("3Dsc-1.2",2)
+    sc_3d_16 = gen_kGrid("3Dsc-1.1",4)
     r2 = reduceKGrid(sc_3d_2)
     r16 = reduceKGrid(sc_3d_16)
     indTest = reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2))
@@ -31,8 +31,8 @@ end
 
 @testset "reduce_expand" begin
     for NN in 1:16
-        gr2 = gen_cP_kGrid(NN,2,1.3)
-        gr3 = gen_cP_kGrid(NN,3,1.3)
+        gr2 = gen_kGrid("2Dsc-1.3",NN)
+        gr3 = gen_kGrid("3Dsc-1.3",NN)
         gr2_r = reduceKGrid(gr2)
         gr3_r = reduceKGrid(gr3)
         ek2 = reshape(gr2.ϵkGrid, (NN,NN))
@@ -60,8 +60,8 @@ end
 @testset "ifft" begin
     tf = reduce_old ∘ ifft_cut_mirror
     for NN in 3:16
-        gr2 = gen_cP_kGrid(NN,2,1.3)
-        gr3 = gen_cP_kGrid(NN,3,1.3)
+        gr2 = gen_kGrid("2Dsc-1.3",NN)
+        gr3 = gen_kGrid("3Dsc-1.3",NN)
         arr2 = randn(NN,NN)
         arr3 = randn(NN,NN,NN)
         gr2_r = reduceKGrid(gr2)
