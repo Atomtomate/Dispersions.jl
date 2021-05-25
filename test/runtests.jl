@@ -2,6 +2,8 @@ using Test
 
 using Dispersions
 
+grid_list = ["2Dsc-1.3", "3Dsc-1.3"]
+
 include("./helper_functions.jl")
 @testset "SC" begin
     include("./Types.jl")
