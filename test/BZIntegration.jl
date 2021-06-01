@@ -1,6 +1,6 @@
 @testset "KSum" begin
     for grid in grid_list
-        for NN in 2:2
+        for NN in 2:8
             gr = gen_kGrid(grid,NN)
             gr_r = reduceKGrid(gr)
             @test kintegrate(gr_r, ones(size(gr_r.ϵkGrid)))[1] ≈ 1.0

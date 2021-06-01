@@ -70,6 +70,7 @@ struct ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
     kMult::Array{Float64,1}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
+    t::Float64
 end
 
 # -------------------------------------------------------------------------------- #
@@ -107,7 +108,7 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
         ϵk_red[i] = ϵkGrid[ti...]
     end
 	kmult = kGrid_multiplicity_cP(ind_red)
-    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
+    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red, kG.t)
 end
 
 """

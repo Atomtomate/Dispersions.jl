@@ -24,6 +24,7 @@ export kintegrate
 include("common.jl")
 include("Types.jl")
 include("SC.jl")
+include("hexagonal.jl")
 include("BZIntegration.jl")
 include("IO_SC.jl")
 
