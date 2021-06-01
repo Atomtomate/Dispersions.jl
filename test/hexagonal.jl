@@ -7,5 +7,7 @@
     r16 = reduceKGrid(p6m_2d_16)
     @test Nk(p6m_2d_2) == 2^2
     @test_throws ArgumentError expandKArr(r16, [1,2,3,4])
+    @test all(gridshape(p6m_2d_2) .== (2,2))
+    @test all(gridshape(r2) .== (2,2))
 end
 

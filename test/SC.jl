@@ -11,9 +11,8 @@ using Base.Iterators
     @test Nk(sc_2d_2) == 2^2
     @test all(isapprox.(flatten(collect(gridPoints(sc_2d_2))), flatten([(0,0) (0,π); (π,0) (π,π)])))
     @test_throws ArgumentError expandKArr(r16, [1,2,3,4])
-    #@test all(expandKGrid(r2, r2.ϵkGrid)[:] .≈ sc_2d_2.ϵkGrid)
-    #@test all(expandKGrid(r3, r3.ϵkGrid)[:] .≈ sc_2d_3.ϵkGrid)
-    #@test maximum(abs.(expandKGrid(r16, r16.ϵkGrid)[:] .- sc_2d_16.ϵkGrid)) < 1/10^12
+    @test all(gridshape(sc_2d_2) .== (2,2))
+    @test all(gridshape(r2) .== (2,2))
 end
 
 
@@ -27,6 +26,8 @@ end
     @test Nk(sc_3d_2) == 2^3
     @test all(isapprox.(flatten(collect(gridPoints(sc_3d_2))), flatten(gridTest)))
     @test_throws ArgumentError expandKArr(r16, [1,2,3,4])
+    @test all(gridshape(sc_3d_2) .== (2,2,2))
+    @test all(gridshape(r2) .== (2,2,2))
 end
 
 @testset "reduce_expand" begin

@@ -9,6 +9,7 @@ import Base.collect
 # -------------------------------------------------------------------------------- #
 
 abstract type p6m <: KGridType end
+
 """
     FullKGrid_p6m  <: FullKGrid{p6m}
 
@@ -60,6 +61,9 @@ end
 #                                   Interface                                      #
 # -------------------------------------------------------------------------------- #
 
+gridshape(kG::FullKGrid_p6m) = (kG.Ns, kG.Ns)
+gridshape(kG::ReducedKGrid_p6m) = (kG.Ns, kG.Ns)
+
 # ---------------------------- BZ to f. irr. BZ -------------------------------
 
 """
@@ -109,12 +113,3 @@ function kGrid_multiplicity_p6m(kIndices)
 end
 
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
-
-#TODO: interface should be conv_transform(grid, arr1, arr2) with this one optional
-@inline function conv_transform(grid::ReducedKGrid{p6m}, arr::Array{Complex{Float64},1})
-    length(arr) == 1 && return arr
-    reshape(arr, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
-end
-
-function conv(kG::ReducedKGrid, arr1::Array{Complex{Float64},1}, arr2::Array{Complex{Float64},1})
-end

@@ -35,6 +35,13 @@ isGridInd(::GridInd3D) = IsGridInd{GridInd3D}
 # ------------------------------ Helper Functions -----------------------------
 
 """
+    gridshape(kG::T) where T <: KGrid
+
+shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
+"""
+gridshape(kG::T) where T <: KGrid = throw(ArgumentError("Unkown kGrid"))
+
+"""
     Nk(kG::T) where T <: KGrid
 
 Total number of k points (length of `kGrid.kGrid` for full grids). 

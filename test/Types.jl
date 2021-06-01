@@ -4,3 +4,4 @@ end
 dG = DummyKGrid()
 
 @test_throws MethodError reduceKGrid(dG)
+@test_throws ArgumentError gridshape(dG)

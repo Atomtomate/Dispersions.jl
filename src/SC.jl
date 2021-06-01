@@ -30,6 +30,8 @@ end
 # -------------------------------------------------------------------------------- #
 
 abstract type cP_2D <: KGridType end
+
+
 """
     FullKGrid_cP_2D  <: FullKGrid{cP_2D}
 
@@ -76,6 +78,9 @@ end
 # -------------------------------------------------------------------------------- #
 #                                   Interface                                      #
 # -------------------------------------------------------------------------------- #
+
+gridshape(kG::ReducedKGrid_cP_2D) = (kG.Ns, kG.Ns)
+gridshape(kG::FullKGrid_cP_2D) = (kG.Ns, kG.Ns)
 
 # ---------------------------- BZ to f. irr. BZ -------------------------------
 
@@ -195,6 +200,9 @@ struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     ϵkGrid::GridDisp
 end
 
+gridshape(kG::ReducedKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
+gridshape(kG::FullKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
+
 function reduceKGrid(kG::FullKGrid{cP_3D})
     s = [kG.Ns for i in 1:3]
     kGrid = reshape(kG.kGrid,s...)
@@ -309,13 +317,3 @@ end
 gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
 
-
-#TODO: interface should be conv_transform(grid, arr1, arr2) with this one optional
-@inline function conv_transform(grid::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64},1})
-    length(arr) == 1 && return arr
-    reshape(arr, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
-end
-@inline function conv_transform(grid::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64},1})
-    length(arr) == 1 && return arr
-    reshape(arr, grid.Ns, grid.Ns, grid.Ns) |> ifft |> x-> reduceKArr_reverse(grid, x) ./ grid.Nk
-end
