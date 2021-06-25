@@ -2,40 +2,36 @@ using Base.Iterators
 
 
 @testset "2D" begin
-    sc_2d_2 = gen_kGrid("2Dsc-1.3",2)
-    sc_2d_3 = gen_kGrid("2Dsc-1.3",4)
-    sc_2d_16 = gen_kGrid("2Dsc-1.4",16)
-    r2 = reduceKGrid(sc_2d_2)
-    r3 = reduceKGrid(sc_2d_2)
-    r16 = reduceKGrid(sc_2d_16)
-    @test Nk(sc_2d_2) == 2^2
-    @test all(isapprox.(flatten(collect(gridPoints(sc_2d_2))), flatten([(0,0) (0,π); (π,0) (π,π)])))
+    r2 = gen_kGrid("2Dsc-1.3",2)
+    r16 = gen_kGrid("2Dsc-1.4",16)
+    @test Nk(r2) == 2^2
+    @test all(dispersion(r2) .≈ r2.ϵkGrid)
+    @test all(isapprox.(flatten(gridPoints(r2)), flatten([(0,0) (π,0) (π,π)])))
+    @test all(isapprox.(flatten(expandKArr(r2, gridPoints(r2))), flatten([(0,0) (π,0); (π,0) (π,π)])))
     @test_throws ArgumentError expandKArr(r16, [1,2,3,4])
-    @test all(gridshape(sc_2d_2) .== (2,2))
     @test all(gridshape(r2) .== (2,2))
 end
 
 
 @testset "3D" begin
-    sc_3d_2 = gen_kGrid("3Dsc-1.2",2)
-    sc_3d_16 = gen_kGrid("3Dsc-1.1",4)
-    r2 = reduceKGrid(sc_3d_2)
-    r16 = reduceKGrid(sc_3d_16)
-    indTest = reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2))
-    gridTest = reshape([(0, 0, 0) (π, 0, 0) (0, π, 0) (π, π, 0) (0, 0, π) (π, 0, π) (0, π, π) (π, π, π)], (2,2,2))
-    @test Nk(sc_3d_2) == 2^3
-    @test all(isapprox.(flatten(collect(gridPoints(sc_3d_2))), flatten(gridTest)))
+    r2 = gen_kGrid("3Dsc-1.2",2)
+    r16 = gen_kGrid("3Dsc-1.1",4)
+    indTest = reduceKArr(r2, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
+    gridTest = reduceKArr(r2, reshape([(0, 0, 0) (π, 0, 0) (0, π, 0) (π, π, 0) (0, 0, π) (π, 0, π) (0, π, π) (π, π, π)], (2,2,2)))
+    @test Nk(r2) == 2^3
+    @test Nk(r16) == 4^3
+    @test all(dispersion(r2) .≈ r2.ϵkGrid)
+    @test all(isapprox.(flatten(gridPoints(r2)), flatten(gridTest)))
     @test_throws ArgumentError expandKArr(r16, [1,2,3,4])
-    @test all(gridshape(sc_3d_2) .== (2,2,2))
     @test all(gridshape(r2) .== (2,2,2))
 end
 
 @testset "reduce_expand" begin
     for NN in 1:16
-        gr2 = gen_kGrid("2Dsc-1.3",NN)
-        gr3 = gen_kGrid("3Dsc-1.3",NN)
-        gr2_r = reduceKGrid(gr2)
-        gr3_r = reduceKGrid(gr3)
+        gr2 = Dispersions.gen_kGrid("2Dsc-1.3",NN, full=true)
+        gr3 = Dispersions.gen_kGrid("3Dsc-1.3",NN, full=true)
+        gr2_r = Dispersions.reduceKGrid(gr2)
+        gr3_r = Dispersions.reduceKGrid(gr3)
         ek2 = reshape(gr2.ϵkGrid, (NN,NN))
         ek3 = reshape(gr3.ϵkGrid, (NN,NN,NN))
         @test all(reduceKArr(gr2_r, ek2) .≈ gr2_r.ϵkGrid)
@@ -65,12 +61,10 @@ end
         gr3 = gen_kGrid("3Dsc-1.3",NN)
         arr2 = randn(NN,NN)
         arr3 = randn(NN,NN,NN)
-        gr2_r = reduceKGrid(gr2)
-        gr3_r = reduceKGrid(gr3)
         #r1 = test_cut(arr2)
         #r2 = test_cut(arr3)
-        r3 = reduceKArr_reverse(gr2_r, arr2)
-        r4 = reduceKArr_reverse(gr3_r, arr3)
+        r3 = Dispersions.reduceKArr_reverse(gr2, arr2)
+        r4 = Dispersions.reduceKArr_reverse(gr3, arr3)
         r5 = tf(arr2)
         r6 = tf(arr3)
         @test all(r5 .≈ r3)

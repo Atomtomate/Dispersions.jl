@@ -80,6 +80,13 @@ function reduceKGrid(kG::FullKGrid{p6m})
     kGrid = reshape(kG.kGrid, s...)
     ϵkGrid = reshape(kG.ϵkGrid, s...)
     index = [(x, y)  for x=1:kG.Ns for y=1:kG.Ns][:]
+    ##TODO: test and implement this reduction
+    #h = floor(Int, kG.Ns/2)
+    #index = [(x, y) for y=1:h for x=1:kG.Ns][:]
+    #if isodd(kG.Ns)
+    #    index_tmp = [(x, h+1) for x=1:(h+1)][:]
+    #    push!(index, index_tmp...)
+    #end
 	kmult = kGrid_multiplicity_p6m(index)
     return ReducedKGrid_p6m(kG.Nk, kG.Ns, index, kmult, kG.kGrid, kG.ϵkGrid[:], kG.t)
 end
@@ -98,10 +105,6 @@ function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
     return arr
 end
 
-function reduceKArr_reverse(kG::ReducedKGrid{p6m}, arr::AbstractArray)
-    return reverse(arr)
-end
-
 """
 	kGrid_multiplicity_cP(kIndices)
 
@@ -109,6 +112,8 @@ Given a set of reduced indices, produce list of multiplicities for each point
 """
 function kGrid_multiplicity_p6m(kIndices)
     res = ones(length(kIndices))
+    #res = 0.5*ones(length(kIndices))
+    #isodd(length(kIndices)) && (res[end] = 1)
     return res
 end
 
