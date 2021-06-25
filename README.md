@@ -1,5 +1,6 @@
-Types and standard operation for k grids in solid state theory.
+Types and standard operation for k grids and tight binding dispersions in solid state theory.
 This project is inteded to be used as a backend for k grid related operations in order to abstract over the actual k grid logic.
+For an example usage see [LadderDGA.jl](https://github.com/Atomtomate/LadderDGA.jl)
 
 |     Build Status    |      Coverage      |  Documentation |      Social    |
 | ------------------- |:------------------:| :-------------:| :-------------:|
@@ -8,11 +9,13 @@ This project is inteded to be used as a backend for k grid related operations in
 # Overview
 
 
-
-# Type Hierarchy
-
-In order to provide a common interface, the project defines a rather strict type hierarchy.
-The most important supertypes are `FullKGrid{T <: GridType}` and `ReducedKGrid{T <: GridType}` which all `T <: GridType` must implement.
-Usually, a certain grid can be defined in different dimensions. These are viewed as separate `GridType` instances and in general do not share functions.
-
 # Interface
+
+- `kG = genKGrid(s, nk)` will generate a k grid with `nk` points in each direction from a configuration string. Examples are `s = "2Dsc-1.0"` (2D simple cubic with hopping parameter - `t = 1.0`), `s = "p6m-1.0"` for a hexagonal lattice.
+- `gridshape(kG)` returns the shape of a k grid. Example: `(4,4)` for a lattice generated with `genKGrid("2Dsc-1.0", 4)`
+- `Nk(kG)` returns the number of k points for the given grid. Example: `16` for a lattice generated with `genKGrid("2Dsc-1.0", 4)`
+- `gridPoints(kG)` returns the k vektors for the given grid.
+- `dispersion(kG)` returns the dispersion relation, i.e. an array of energy value for each point of `gridPoints(kG)`.
+
+- `conv(kG, arr1, arr2)` returns the convolution of the arrays `arr1` and `arr2` (any function evaluated on `kG`) on `kG`. This is usefull for the evaluation of expressions like G(q) = sum_k G(q)*G(k+q)
+- `conv_fft(kG, arr1, arr2)` and `conv_fft1(kG, arr1, arr2)` are helpers, used when `arr1` or both `arr1` and `arr2` are already fourier transformed (used for repeated evaluation with the same kernel).
