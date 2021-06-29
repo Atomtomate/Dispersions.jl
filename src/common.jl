@@ -1,5 +1,6 @@
 function gen_kGrid(kg::String, Nk::Int; full=false)
-    data = split(kg, "-")
+    sp = findfirst("-", kg)[1]
+    data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
         FullKGrid_cP_3D(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "2dsc"
