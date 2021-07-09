@@ -27,7 +27,8 @@ struct FullKGrid_p6m  <: FullKGrid{p6m}
     function FullKGrid_p6m(Nk::Int, t::Float64)
         ki_monkhorst = [(2*j - Nk - 1)/(2*Nk) for j in 1:Nk]
         ki_mesh = Base.product(ki_monkhorst,ki_monkhorst);
-        f(x) = (2π * (x[1] - x[2]/sqrt(3)), 4π*x[2]/sqrt(3))
+        #f_old(x) = (2π * (x[1] - x[2]/sqrt(3)), 4π*x[2]/sqrt(3))
+        f(x) =  (2π * x[1], -2π * x[1]/sqrt(3) + 4π*x[2]/sqrt(3))
         kGrid = collect(map(f, ki_mesh))[:]
         disp = gen_ϵkGrid(p6m, kGrid, t)
         new(Nk^2, Nk, kGrid, disp, t)
