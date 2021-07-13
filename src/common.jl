@@ -79,7 +79,7 @@ end
 
 
 function conv_fft1(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
-    Nk(kG) == 1 && return arr1 .* arr2
+    Nk(kG) == 1 && return (arr1 .* arr2
     reshape(fft(expandKArr(kG, arr1))[:] .* arr2, gridshape(kG)) |> ifft |> reverse |> x-> reduceKArr(kG, x) ./ Nk(kG)
 end
 

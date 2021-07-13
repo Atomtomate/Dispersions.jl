@@ -103,7 +103,7 @@ function expandKArr(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
 end
 
 function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
-    return arr
+    return arr[:]
 end
 
 """
