@@ -89,7 +89,7 @@ function reduceKGrid(kG::FullKGrid{p6m})
     #    push!(index, index_tmp...)
     #end
 	kmult = kGrid_multiplicity_p6m(index)
-    return ReducedKGrid_p6m(kG.Nk, kG.Ns, index, kmult, kG.kGrid, kG.ϵkGrid[:], kG.t)
+    return ReducedKGrid_p6m(kG.Nk, kG.Ns, index[:], kmult[:], kG.kGrid[:], kG.ϵkGrid[:], kG.t)
 end
 
 """

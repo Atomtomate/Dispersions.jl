@@ -1,4 +1,4 @@
-function gen_kGrid(kg::String, Nk::Int; full=false)
+function gen_kGrid(kg::String, Nk::Int=0; full=false)
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
@@ -7,6 +7,8 @@ function gen_kGrid(kg::String, Nk::Int; full=false)
         FullKGrid_cP_2D(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "p6m"
         FullKGrid_p6m(Nk, parse(Float64, data[2]))
+    elseif lowercase(data[1]) == "file"
+        FullKGrid_File(data[2])
     else
         throw(ArgumentError("Unkown grid type"))
     end
