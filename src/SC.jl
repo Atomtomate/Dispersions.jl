@@ -31,7 +31,6 @@ end
 
 abstract type cP_2D <: KGridType end
 
-
 """
     FullKGrid_cP_2D  <: FullKGrid{cP_2D}
 
@@ -94,9 +93,8 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
-    s = [kG.Ns for i in 1:2]
-    kGrid = reshape(kG.kGrid, s...)
-    ϵkGrid = reshape(kG.ϵkGrid, s...)
+    kGrid = reshape(kG.kGrid, gridshape(kG))
+    ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
     ind = collect(Base.product([1:kG.Ns for Di in 1:2]...))
 
     ll = floor(Int,size(kGrid,1)/2 + 1)
@@ -112,7 +110,7 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
-	kmult = kGrid_multiplicity_cP(ind_red)
+	kmult = kGrid_multiplicity(cP_2D, ind_red)
     return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red, kG.t)
 end
 
@@ -135,19 +133,6 @@ function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
     return newArr
 end
 
-"""
-    kGrid_multiplicity(kIndices)
-
-Compute multiplicity for each k point over a given index
-array of a reduced kGrid.
-"""
-#function multiplicity(kIndices::ReducedKIndices_cP)
-#    min_ind = minimum(kIndices.grid)
-#    max_ind = maximum(kIndices.grid)
-#    borderFactor(el) = prod((el[i] == min_ind[i] || el[i] == max_ind[i]) ? 0.5 : 1.0 for i in 1:length(min_ind))
-#    length(min_ind) == 2 ? map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices.grid) :
-#            map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices.grid)
-#end
 # ================================================================================ #
 #                                Simple Cubic 3D                                   #
 # ================================================================================ #
@@ -221,7 +206,7 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
-	kmult = kGrid_multiplicity_cP(ind_red)
+	kmult = kGrid_multiplicity(cP_3D, ind_red)
     return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, ind_red, kmult, grid_red, ϵk_red)
 end
 
@@ -290,11 +275,13 @@ end
 
 
 """
-	kGrid_multiplicity_cP(kIndices)
+    kGrid_multiplicity(::Type{cP_2D}, kIndices)
+    kGrid_multiplicity(::Type{cP_3D}, kIndices)
 
 Given a set of reduced indices, produce list of multiplicities for each point
 """
-function kGrid_multiplicity_cP(kIndices)
+kGrid_multiplicity(::Type{cP_3D}, kIndices) = kGrid_multiplicity(cP_2D, kIndices)
+function kGrid_multiplicity(::Type{cP_2D}, kIndices)
     min_ind = minimum(kIndices)
     max_ind = maximum(kIndices)
     function borderFactor(el)

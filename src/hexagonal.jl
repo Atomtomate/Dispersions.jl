@@ -77,18 +77,24 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{p6m})
-    s = [kG.Ns for i in 1:2]
-    kGrid = reshape(kG.kGrid, s...)
-    ϵkGrid = reshape(kG.ϵkGrid, s...)
-    index = [(x, y)  for x=1:kG.Ns for y=1:kG.Ns][:]
-    ##TODO: test and implement this reduction
-    #h = floor(Int, kG.Ns/2)
-    #index = [(x, y) for y=1:h for x=1:kG.Ns][:]
-    #if isodd(kG.Ns)
-    #    index_tmp = [(x, h+1) for x=1:(h+1)][:]
-    #    push!(index, index_tmp...)
-    #end
-	kmult = kGrid_multiplicity_p6m(index)
+    kGrid = reshape(kG.kGrid, gridshape(kG))
+    ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
+    ind = collect(Base.product([1:kG.Ns for Di in 1:2]...))
+
+    nh = floor(Int,gridshape(kG)[2]/2) + 1
+    index = [[x, y] for y in nh:gridshape(kG)[2] for x in 1:gridshape(kG)[1]]
+
+
+    ind_red = GridInd2D(undef, length(index))
+    grid_red = GridPoints2D(undef, length(index))
+    ϵk_red = GridDisp(undef, length(index))
+
+    for (i,ti) in enumerate(index)
+        ind_red[i] = ind[ti...]
+        grid_red[i] = kGrid[ti...]
+        ϵk_red[i] = ϵkGrid[ti...]
+    end
+	kmult = kGrid_multiplicity_p6m(p6m, ind_red)
     return ReducedKGrid_p6m(kG.Nk, kG.Ns, index[:], kmult[:], kG.kGrid[:], kG.ϵkGrid[:], kG.t)
 end
 
@@ -107,14 +113,16 @@ function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
 end
 
 """
-	kGrid_multiplicity_cP(kIndices)
+	kGrid_multiplicity_p6m(kIndices)
 
 Given a set of reduced indices, produce list of multiplicities for each point
 """
-function kGrid_multiplicity_p6m(kIndices)
+function kGrid_multiplicity(::Type{p6m}, kIndices)
     res = ones(length(kIndices))
-    #res = 0.5*ones(length(kIndices))
-    #isodd(length(kIndices)) && (res[end] = 1)
+    nh = minimum(last.(kIndices))
+    for i in axes(res,1)
+        (kIndices[i][2] == nh) && (res[i] = 0.5)
+    end
     return res
 end
 
