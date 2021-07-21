@@ -8,3 +8,8 @@
     @test all(gridshape(r2) .== (2,2))
     @test all(dispersion(r2) .≈ r2.ϵkGrid)
 end
+
+@testset "kmult" begin
+    kG = gen_kGrid("p6m-1.3",4)
+    @test sum(kG.kMult) == Nk(kG)
+end

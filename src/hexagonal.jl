@@ -51,11 +51,11 @@ Fields
 struct ReducedKGrid_p6m  <: ReducedKGrid{p6m}
     Nk::Int
     Ns::Int
+    t::Float64
     kInd::GridInd2D
     kMult::Array{Float64,1}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
-    t::Float64
 end
 
 # -------------------------------------------------------------------------------- #
@@ -94,8 +94,8 @@ function reduceKGrid(kG::FullKGrid{p6m})
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
-	kmult = kGrid_multiplicity_p6m(p6m, ind_red)
-    return ReducedKGrid_p6m(kG.Nk, kG.Ns, index[:], kmult[:], kG.kGrid[:], kG.ϵkGrid[:], kG.t)
+	kmult = kGrid_multiplicity(p6m, ind_red)
+    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red,  ϵk_red)
 end
 
 """
@@ -118,10 +118,10 @@ end
 Given a set of reduced indices, produce list of multiplicities for each point
 """
 function kGrid_multiplicity(::Type{p6m}, kIndices)
-    res = ones(length(kIndices))
+    res = ones(Float64, length(kIndices))
     nh = minimum(last.(kIndices))
     for i in axes(res,1)
-        (kIndices[i][2] == nh) && (res[i] = 0.5)
+        (kIndices[i][2] != nh) && (res[i] = 2.0)
     end
     return res
 end
