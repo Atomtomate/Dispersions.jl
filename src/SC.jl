@@ -215,7 +215,7 @@ end
 function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
     N = maximum(maximum.(kG.kInd))
-    newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 3))...)
+    newArr = Array{eltype(arr)}(undef, gridshape(kG)...)
     for (ri, redInd) in enumerate(kG.kInd)
         perms = unique(collect(permutations(redInd)))
         for p in perms

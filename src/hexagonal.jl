@@ -81,8 +81,8 @@ function reduceKGrid(kG::FullKGrid{p6m})
     ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
     ind = collect(Base.product([1:kG.Ns for Di in 1:2]...))
 
-    nh = floor(Int,gridshape(kG)[2]/2) + 1
-    index = [[x, y] for y in nh:gridshape(kG)[2] for x in 1:gridshape(kG)[1]]
+    nh  = floor(Int,gridshape(kG)[2]/2) + 1
+    index = ind[:,nh:end] 
 
 
     ind_red = GridInd2D(undef, length(index))
@@ -96,7 +96,7 @@ function reduceKGrid(kG::FullKGrid{p6m})
     end
 	kmult = kGrid_multiplicity(p6m, ind_red)
     #return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red,  ϵk_red)
-    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(Int, length(ind)), kG.kGrid[:], kG.ϵkGrid[:])
+    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
 end
 
 """
@@ -106,11 +106,17 @@ Expands array of values on reduced k grid back to full BZ.
 """
 function expandKArr(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    return arr
+    gs  = gridshape(kG)
+    nh  = floor(Int,gridshape(kG)[2]/2) + 1
+    res = Array{T,2}(undef, gs...)
+    res[:, nh:end] = reshape(arr, gs[1], nh-iseven(gs[2]))
+    res[:, 1:(nh-iseven(gs[2]))] = reverse(res[:, nh:end])
+    return res
 end
 
 function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
-    return arr[:]
+    nh  = floor(Int,gridshape(kG)[2]/2) + 1
+    return (reshape(arr, gridshape(kG))[:,nh:end])[:]
 end
 
 """
@@ -119,11 +125,9 @@ end
 Given a set of reduced indices, produce list of multiplicities for each point
 """
 function kGrid_multiplicity(::Type{p6m}, kIndices)
-    res = ones(Float64, length(kIndices))
-    nh = minimum(last.(kIndices))
-    for i in axes(res,1)
-        (kIndices[i][2] != nh) && (res[i] = 2.0)
-    end
+    res = 2.0*ones(Float64, length(kIndices))
+    li = trunc(Int, sqrt(length(kIndices)))
+    isodd(length(kIndices)) && (res[1:li] .= 1.0)
     return res
 end
 
