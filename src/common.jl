@@ -72,19 +72,19 @@ KGrid
 gen_ϵkGrid(::Type{T1}, kGrid::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number} = throw(MethodError("KGrid Instance not found"))
 
 
-function conv(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
+function conv(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft |>  x-> reduceKArr(kG, ifft_post!(typeof(kG), x)) ./ Nk(kG)
+    reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft |>  x-> reduceKArr(kG, ifft_post!(T, x)) ./ Nk(kG)
 end
 
 
-function conv_fft1(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
+function conv_fft1(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(fft(expandKArr(kG, arr1))[:] .* arr2, gridshape(kG)) |> ifft |> x-> reduceKArr(kG, ifft_post!(typeof(kG), x)) ./ Nk(kG)
+    reshape(fft(expandKArr(kG, arr1))[:] .* arr2, gridshape(kG)) |> ifft |> x-> reduceKArr(kG, ifft_post!(T, x)) ./ Nk(kG)
 end
 
-function conv_fft(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
+function conv_fft(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(arr1 .* arr2, gridshape(kG)...) |> ifft |> x-> reduceKArr(kG, ifft_post!(typeof(kG),x )) ./ Nk(kG)
+    reshape(arr1 .* arr2, gridshape(kG)...) |> ifft |> x-> reduceKArr(kG, ifft_post!(T,x )) ./ Nk(kG)
 end
 
