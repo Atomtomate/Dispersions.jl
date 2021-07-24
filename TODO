@@ -1,8 +1,6 @@
-- define comon interface functions for all grid types
-    - multiplcity
-    - reduce_kGrid
-    - FullGrid
-    - ReducedGrid
-
-- make kGridPoints behave like array
-    - convert?
+- missing tests:
+    - fft
+    - ifft
+    - conv
+    - conv_fft1
+    - conv_fft
