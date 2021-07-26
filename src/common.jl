@@ -102,7 +102,9 @@ function conv_fft1!(res::AbstractArray{Complex{Float64},1}, kG::ReducedKGrid{T},
     Nk(kG) == 1 && return arr1 .* arr2
     expandKArr!(kG, arr1)
     fft!(kG.expand_cache)
-    kG.expand_cache[:,:] = kG.expand_cache .* reshape(arr2, gridshape(kG))
+    for i in eachindex(kG.expand_cache)
+        kG.expand_cache[i] = (kG.expand_cache .* reshape(arr2, gridshape(kG)))[i]
+    end
     ifft!(kG.expand_cache)
     ifft_post!(T, kG.expand_cache)
     res[:] = reduceKArr(kG, kG.expand_cache) ./ Nk(kG)
