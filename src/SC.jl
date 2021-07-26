@@ -1,4 +1,5 @@
 import Base.collect
+#TODO update tests and docu for improved expandKArr
 
 
 """
@@ -72,6 +73,8 @@ struct ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
     kMult::Array{Float64,1}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
+    expand_perms::Vector{Vector{CartesianIndex{2}}}
+    expand_cache::Array{Complex{Float64}}
 end
 
 # -------------------------------------------------------------------------------- #
@@ -110,8 +113,19 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
+
+    expand_perms = Vector{Vector{CartesianIndex{2}}}(undef, length(ind_red))
+    for (ri, redInd) in enumerate(ind_red)
+        perms = unique(collect(permutations(redInd)))
+        expand_perms[ri] = Vector{CartesianIndex{2}}(undef, length(perms))
+        for (ip,p) in enumerate(perms)
+            expand_perms[ri][ip] = CartesianIndex(p...)
+        end
+    end
+    expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
+
 	kmult = kGrid_multiplicity(cP_2D, ind_red)
-    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
+    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, expand_perms, expand_cache)
 end
 
 """
@@ -119,18 +133,26 @@ end
 
 Expands array of values on reduced k grid back to full BZ.
 """
+
 function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    N = maximum(maximum.(kG.kInd))
-    newArr = Array{eltype(arr)}(undef, (N*ones(Int64, 2))...)
-    for (ri, redInd) in enumerate(kG.kInd)
-        perms = unique(collect(permutations(redInd)))
+    newArr = Array{eltype(arr)}(undef, gridshape(kG)...)
+    for (ri,perms) in enumerate(kG.expand_perms)
         for p in perms
-            newArr[p...] = arr[ri]
+            newArr[p] = arr[ri]
         end
     end
     minimum(minimum.(kG.kInd)) > 1 && expand_mirror!(newArr)
     return newArr
+end
+
+function expandKArr!(kG::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64}, 1})
+    for (ri,perms) in enumerate(kG.expand_perms)
+        for p in perms
+            kG.expand_cache[p] = arr[ri]
+        end
+    end
+    expand_mirror!(kG.expand_cache)
 end
 
 # ================================================================================ #
@@ -184,6 +206,8 @@ struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     kMult::Array{Float64,1}
     kGrid::GridPoints3D
     ϵkGrid::GridDisp
+    expand_perms::Vector{Vector{CartesianIndex{3}}}
+    expand_cache::Array{Complex{Float64}}
 end
 
 gridshape(kG::ReducedKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
@@ -202,28 +226,48 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
     grid_red = GridPoints3D(undef, length(index))
     ϵk_red = GridDisp(undef, length(index))
 
+
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
+
+    expand_perms = Vector{Vector{CartesianIndex{3}}}(undef, length(ind_red))
+    for (ri, redInd) in enumerate(ind_red)
+        perms = unique(collect(permutations(redInd)))
+        expand_perms[ri] = Vector{CartesianIndex{3}}(undef, length(perms))
+        for (ip,p) in enumerate(perms)
+            expand_perms[ri][ip] = CartesianIndex(p...)
+        end
+    end
+
+    expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
+
 	kmult = kGrid_multiplicity(cP_3D, ind_red)
-    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
+    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, expand_perms, expand_cache)
 end
 
 
-function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array)
+function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    N = maximum(maximum.(kG.kInd))
-    newArr = Array{eltype(arr)}(undef, gridshape(kG)...)
-    for (ri, redInd) in enumerate(kG.kInd)
-        perms = unique(collect(permutations(redInd)))
+    newArr = Array{T}(undef, gridshape(kG)...)
+    for (ri,perms) in enumerate(kG.expand_perms)
         for p in perms
-            newArr[p...] = arr[ri]
+            newArr[p] = arr[ri]
         end
     end
     expand_mirror!(newArr)
     return newArr
+end
+
+function expandKArr!(kG::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64}, 1}) 
+    for (ri,perms) in enumerate(kG.expand_perms)
+        for p in perms
+            kG.expand_cache[p] = arr[ri]
+        end
+    end
+    expand_mirror!(kG.expand_cache)
 end
 
 
@@ -305,5 +349,5 @@ end
 gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
 
-ifft_post!(::Type{cP_2D}, x::Array{T,2}) where T <: Number = reverse(x) 
-ifft_post!(::Type{cP_3D}, x::Array{T,3}) where T <: Number = reverse(x) 
+ifft_post!(::Type{cP_2D}, x::Array{T,2}) where T <: Number = reverse!(x) 
+ifft_post!(::Type{cP_3D}, x::Array{T,3}) where T <: Number = reverse!(x) 

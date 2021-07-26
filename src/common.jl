@@ -72,19 +72,44 @@ KGrid
 gen_ϵkGrid(::Type{T1}, kGrid::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number} = throw(MethodError("KGrid Instance not found"))
 
 
-function conv(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
+function conv(kG::ReducedKGrid{T}, arr1::AbstractArray, arr2::AbstractArray) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft |>  x-> reduceKArr(kG, ifft_post!(T, x)) ./ Nk(kG)
+    tmp = reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft 
+    ifft_post!(T, tmp)
+    return reduceKArr(kG, tmp) ./ Nk(kG)
+end
+
+function conv!(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
+    Nk(kG) == 1 && return arr1 .* arr2
+    expandKArr!(kG, arr1)
+    tmp = fft(kG.expand_cache)
+    expandKArr!(kG, arr2)
+    tmp2 = fft(kG.expand_cache)
+    tmp = ifft(tmp .* tmp2)
+    ifft_post!(tmp)
+    return reduceKArr(kG, tmp) ./ Nk(kG)
 end
 
 
 function conv_fft1(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(fft(expandKArr(kG, arr1))[:] .* arr2, gridshape(kG)) |> ifft |> x-> reduceKArr(kG, ifft_post!(T, x)) ./ Nk(kG)
+    newArr = Array{eltype(arr1),1}(undef, length(kG.kInd))
+    conv_fft1!(newArr, kG, arr1, arr2)
+    return newArr
+end
+
+function conv_fft1!(res::AbstractArray{Complex{Float64},1}, kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
+    Nk(kG) == 1 && return arr1 .* arr2
+    expandKArr!(kG, arr1)
+    fft!(kG.expand_cache)
+    kG.expand_cache[:,:] = kG.expand_cache .* reshape(arr2, gridshape(kG))
+    ifft!(kG.expand_cache)
+    ifft_post!(T, kG.expand_cache)
+    res[:] = reduceKArr(kG, kG.expand_cache) ./ Nk(kG)
 end
 
 function conv_fft(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
     Nk(kG) == 1 && return arr1 .* arr2
-    reshape(arr1 .* arr2, gridshape(kG)...) |> ifft |> x-> reduceKArr(kG, ifft_post!(T,x )) ./ Nk(kG)
+    reduceKArr(kG, ifft_post!(T, ifft(reshape(arr1 .* arr2, gridshape(kG)...)))) ./ Nk(kG)
 end
 

@@ -59,6 +59,7 @@ struct ReducedKGrid_p6m  <: ReducedKGrid{p6m}
     kMult::Array{Float64,1}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
+    expand_cache::Array{Complex{Float64},2}
 end
 
 # -------------------------------------------------------------------------------- #
@@ -98,7 +99,14 @@ function reduceKGrid(kG::FullKGrid{p6m})
     #end
 	#kmult = kGrid_multiplicity(p6m, ind_red)
     #return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
-    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:])
+    expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
+    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:], expand_cache)
+end
+
+function expandKArr!(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
+    for i in eachindex(arr)
+        kG.expand_cache[i] = reshape(arr,gridshape(kG))[i]
+    end
 end
 
 """
@@ -142,4 +150,5 @@ function ifft_post!(::Type{p6m}, x::Array{T,2}) where T <: Number
     nh = trunc(Int, size(x,2)/2)
     x[1:nh,1:nh],x[nh+1:end,nh+1:end] = x[nh+1:end,nh+1:end],x[1:nh,1:nh]
     x[1:nh,nh+1:end],x[nh+1:end,1:nh] = x[nh+1:end,1:nh],x[1:nh,nh+1:end]
+    return x
 end

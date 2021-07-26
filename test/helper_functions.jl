@@ -42,4 +42,23 @@ function reduce_old(kGrid)
     return grid_red
 end
 
+function naive_bubble(fk::FullKGrid{T}) where T
+    ωn = 0
+    νn = 0
+    Σ_loc = 2.734962277113537 - 0.41638191263582125im
+    β = 6.0
+    μ = 3.512282168483125
+    disp(ki) = Dispersions.gen_ϵkGrid(T, [ki], fk.t)[1]
+    res = zeros(Complex{Float64}, length(fk.kGrid))
 
+    for (kii,ki) in enumerate(fk.kGrid)
+        for (qii,qi) in enumerate(fk.kGrid)
+            Σ_int_ωn = Σ_loc
+            Σ_int_ωn_νn = Σ_loc
+            w1 = 1im * (π*(2*ωn+1)/β) + μ - Σ_int_ωn - disp(ki)
+            w2 = 1im * (π*(2*(ωn+νn)+1)/β) + μ - Σ_int_ωn_νn - disp(ki .+ qi)
+            res[qii] = res[qii] - 1.0 / (w1 * w2)
+        end
+    end
+    return res
+end
