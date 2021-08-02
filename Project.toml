@@ -1,7 +1,7 @@
 name = "Dispersions"
 uuid = "9451dd48-6b2a-4bde-a443-9ec270a37806"
 authors = ["Julian Stobbe <Atomtomate@gmx.de>"]
-version = "0.1.8"
+version = "0.1.9"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
