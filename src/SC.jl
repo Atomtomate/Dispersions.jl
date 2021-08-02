@@ -45,10 +45,12 @@ struct FullKGrid_cP_2D  <: FullKGrid{cP_2D}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
     t::Float64
-    function FullKGrid_cP_2D(Nk::Int, t::Float64)
+    fftw_plan::FFTW.cFFTWPlan
+    function FullKGrid_cP_2D(Nk::Int, t::Float64; fftw_plan=nothing)
         kx = [(2*π/Nk) * j - π for j in 1:Nk]
         kGrid  = collect(Base.product([kx for Di in 1:2]...))[:]
-        new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t)
+        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, Nk, Nk), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t,fftw_plan)
     end
 end
 
@@ -75,6 +77,7 @@ struct ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
     ϵkGrid::GridDisp
     expand_perms::Vector{Vector{CartesianIndex{2}}}
     expand_cache::Array{Complex{Float64}}
+    fftw_plan::FFTW.cFFTWPlan
 end
 
 # -------------------------------------------------------------------------------- #
@@ -125,7 +128,8 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
 	kmult = kGrid_multiplicity(cP_2D, ind_red)
-    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, expand_perms, expand_cache)
+    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red,
+                              expand_perms, expand_cache, kG.fftw_plan)
 end
 
 """
@@ -142,7 +146,7 @@ function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
             newArr[p] = arr[ri]
         end
     end
-    minimum(minimum.(kG.kInd)) > 1 && expand_mirror!(newArr)
+    kG.Ns > 2 && expand_mirror!(newArr)
     return newArr
 end
 
@@ -152,7 +156,7 @@ function expandKArr!(kG::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64}, 1})
             kG.expand_cache[p] = arr[ri]
         end
     end
-    expand_mirror!(kG.expand_cache)
+    kG.Ns > 2 && expand_mirror!(kG.expand_cache)
 end
 
 # ================================================================================ #
@@ -177,10 +181,12 @@ struct FullKGrid_cP_3D  <: FullKGrid{cP_3D}
     kGrid::GridPoints3D
     ϵkGrid::GridDisp
     t::Float64
-    function FullKGrid_cP_3D(Nk::Int, t::Float64)
+    fftw_plan::FFTW.cFFTWPlan
+    function FullKGrid_cP_3D(Nk::Int, t::Float64; fftw_plan=nothing)
+        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, Nk, Nk, Nk), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         kx = [(2*π/Nk) * j - π for j in 1:Nk];
         kGrid  = collect(Base.product([kx for Di in 1:3]...))[:]
-        new(Nk^3, Nk, kGrid, gen_ϵkGrid(cP_3D,kGrid,t),t)
+        new(Nk^3, Nk, kGrid, gen_ϵkGrid(cP_3D,kGrid,t),t, fftw_plan)
     end
 end
 
@@ -208,6 +214,7 @@ struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
     ϵkGrid::GridDisp
     expand_perms::Vector{Vector{CartesianIndex{3}}}
     expand_cache::Array{Complex{Float64}}
+    fftw_plan::FFTW.cFFTWPlan
 end
 
 gridshape(kG::ReducedKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
@@ -245,19 +252,20 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
 	kmult = kGrid_multiplicity(cP_3D, ind_red)
-    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, expand_perms, expand_cache)
+    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, 
+                              expand_perms, expand_cache, kG.fftw_plan)
 end
 
 
 function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    newArr = Array{T}(undef, gridshape(kG)...)
+    newArr = Array{T}(undef, gridshape(kG))
     for (ri,perms) in enumerate(kG.expand_perms)
         for p in perms
             newArr[p] = arr[ri]
         end
     end
-    expand_mirror!(newArr)
+    kG.Ns > 2 && expand_mirror!(newArr)
     return newArr
 end
 
@@ -267,7 +275,7 @@ function expandKArr!(kG::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64}, 1})
             kG.expand_cache[p] = arr[ri]
         end
     end
-    expand_mirror!(kG.expand_cache)
+    kG.Ns > 2 && expand_mirror!(kG.expand_cache)
 end
 
 
@@ -278,6 +286,13 @@ function reduceKArr(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union
     end
     return res
 end
+
+function reduceKArr!(kG::ReducedKGrid{T1}, res::AbstractArray, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
+    for (i,ki) in enumerate(kG.kInd)
+        res[i] = arr[ki...]
+    end
+end
+
 
 #TODO: this is a placeholder until convolution is ported from lDGA code
 function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}

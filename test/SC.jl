@@ -34,8 +34,16 @@ end
         gr3_r = Dispersions.reduceKGrid(gr3)
         ek2 = reshape(gr2.ϵkGrid, (NN,NN))
         ek3 = reshape(gr3.ϵkGrid, (NN,NN,NN))
+        res_r2 = zeros(eltype(gr2.ϵkGrid), size(gr2_r.ϵkGrid)...) 
+        res_r3 = zeros(eltype(gr3.ϵkGrid), size(gr3_r.ϵkGrid)...) 
+        res_f2 = zeros(eltype(ek2), size(ek2)...) 
+        res_f3 = zeros(eltype(ek3), size(ek3)...) 
         @test all(reduceKArr(gr2_r, ek2) .≈ gr2_r.ϵkGrid)
         @test all(reduceKArr(gr3_r, ek3) .≈ gr3_r.ϵkGrid)
+        reduceKArr!(gr2_r, res_r2, ek2)
+        reduceKArr!(gr3_r, res_r3, ek3)
+        @test all(res_r2 .≈ gr2_r.ϵkGrid)
+        @test all(res_r3 .≈ gr3_r.ϵkGrid)
         gr2_cut = cut_mirror(ek2)
         gr3_cut = cut_mirror(ek3)
         @test all(map(x-> x in gr2.ϵkGrid, gr2_cut)) # No data lost
@@ -49,6 +57,10 @@ end
         @test all(abs.(Dispersions.expand_mirror!(gr3_pre_exp) .- ek3) .< 1.0/10^10)
         @test all(abs.(expandKArr(gr2_r, gr2_r.ϵkGrid) .- ek2) .< 1.0/10^10)
         @test all(abs.(expandKArr(gr3_r, gr3_r.ϵkGrid) .- ek3) .< 1.0/10^10)
+        expandKArr!(gr2_r, convert.(Complex{Float64},gr2_r.ϵkGrid))
+        expandKArr!(gr3_r, convert.(Complex{Float64},gr3_r.ϵkGrid))
+        @test all(abs.(gr2_r.expand_cache .- convert.(Complex{Float64},ek2)) .< 1.0/10^10)
+        @test all(abs.(gr3_r.expand_cache .- convert.(Complex{Float64},ek3)) .< 1.0/10^10)
     end
 end
 

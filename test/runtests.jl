@@ -21,3 +21,7 @@ end
 @testset "BZ Integration" begin
     include("./BZIntegration.jl")
 end
+
+@testset "common" begin
+    include("./common.jl")
+end

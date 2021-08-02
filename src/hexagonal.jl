@@ -27,14 +27,16 @@ struct FullKGrid_p6m  <: FullKGrid{p6m}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
     t::Float64
-    function FullKGrid_p6m(Nk::Int, t::Float64)
+    fftw_plan::FFTW.cFFTWPlan
+    function FullKGrid_p6m(Nk::Int, t::Float64; fftw_plan=nothing)
         ki_monkhorst = [(2*j - Nk - 1)/(2*Nk) for j in 1:Nk]
         ki_mesh = Base.product(ki_monkhorst,ki_monkhorst);
         #f_old(x) = (2π * (x[1] - x[2]/sqrt(3)), 4π*x[2]/sqrt(3))
         f(x) =  (2π * x[1], -2π * x[1]/sqrt(3) + 4π*x[2]/sqrt(3))
         kGrid = collect(map(f, ki_mesh))[:]
         disp = gen_ϵkGrid(p6m, kGrid, t)
-        new(Nk^2, Nk, kGrid, disp, t)
+        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, Nk, Nk), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        new(Nk^2, Nk, kGrid, disp, t, fftw_plan)
     end
 end
 
@@ -60,6 +62,7 @@ struct ReducedKGrid_p6m  <: ReducedKGrid{p6m}
     kGrid::GridPoints2D
     ϵkGrid::GridDisp
     expand_cache::Array{Complex{Float64},2}
+    fftw_plan::FFTW.cFFTWPlan
 end
 
 # -------------------------------------------------------------------------------- #
@@ -100,7 +103,8 @@ function reduceKGrid(kG::FullKGrid{p6m})
 	#kmult = kGrid_multiplicity(p6m, ind_red)
     #return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
-    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:], expand_cache)
+    return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:],
+                            expand_cache, kG.fftw_plan)
 end
 
 function expandKArr!(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
@@ -122,7 +126,7 @@ function expandKArr(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
     #res[:, nh:end] = reshape(arr, gs[1], nh-iseven(gs[2]))
     #res[:, 1:(nh-iseven(gs[2]))] = reverse(res[:, nh:end])
     #$return res
-    return reshape(arr, gridshape(kG)...)
+    return reshape(arr, gridshape(kG))
 end
 
 function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
@@ -130,6 +134,13 @@ function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
     #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
     return arr[:]
 end
+
+function reduceKArr!(kG::ReducedKGrid{p6m}, res::AbstractArray, arr::AbstractArray)
+    #nh  = floor(Int,gridshape(kG)[2]/2) + 1
+    #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
+    res[:] = arr[:]
+end
+
 
 """
 	kGrid_multiplicity_p6m(kIndices)

@@ -42,6 +42,7 @@ function reduce_old(kGrid)
     return grid_red
 end
 
+# typical use case.
 function naive_bubble(fk::FullKGrid{T}) where T
     ωn = 0
     νn = 0
