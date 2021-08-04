@@ -80,7 +80,7 @@ function conv(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2
 end
 
 function conv!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
-    Nk(kG) == 1 && return arr1 .* arr2
+    Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     expandKArr!(kG, arr1)
     tmp = fft(kG.expand_cache)
     expandKArr!(kG, arr2)
@@ -101,7 +101,7 @@ function conv_fft1(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1},
 end
 
 function conv_fft1!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
-    Nk(kG) == 1 && return arr1 .* arr2
+    Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     expandKArr!(kG, arr1)
     AbstractFFTs.mul!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
     kG.expand_cache[:] = (kG.expand_cache .* arr2)
@@ -117,7 +117,7 @@ function conv_fft(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64}}, ar
 end
 
 function conv_fft!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
-    Nk(kG) == 1 && return arr1 .* arr2
+    Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     kG.expand_cache[:] = arr1 .* arr2
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
     ifft_post!(T, kG.expand_cache)

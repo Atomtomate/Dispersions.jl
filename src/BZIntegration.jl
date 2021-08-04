@@ -16,7 +16,7 @@ function kintegrate(kG::T1, arr::AbstractArray, dim::Int, type::T2 = KSum()) whe
     return mapslices(sub_arr -> sum(kG.kMult .* sub_arr)/Nk(kG), arr, dims=dim)
 end
 
-function kintegrate(kG::T1, arr::AbstractArray; type::T2 = KSum()) where {T1 <: ReducedKGrid, T2 <: KSum}
+function kintegrate(kG::T1, arr::AbstractArray{T2,1}; type::T3 = KSum()) where {T1 <: ReducedKGrid, T2 <: Number, T3 <: KSum}
     return sum(kG.kMult .* arr)/Nk(kG)
 end
 

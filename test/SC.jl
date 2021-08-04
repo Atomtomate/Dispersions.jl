@@ -53,14 +53,14 @@ end
         gr2_pre_exp[al:end,al:end] = gr2_cut
         gr3_pre_exp = zeros(size(ek3))
         gr3_pre_exp[al:end,al:end,al:end] = gr3_cut
-        @test all(abs.(Dispersions.expand_mirror!(gr2_pre_exp) .- ek2) .< 1.0/10^10)
-        @test all(abs.(Dispersions.expand_mirror!(gr3_pre_exp) .- ek3) .< 1.0/10^10)
         @test all(abs.(expandKArr(gr2_r, gr2_r.ϵkGrid) .- ek2) .< 1.0/10^10)
         @test all(abs.(expandKArr(gr3_r, gr3_r.ϵkGrid) .- ek3) .< 1.0/10^10)
         expandKArr!(gr2_r, convert.(Complex{Float64},gr2_r.ϵkGrid))
         expandKArr!(gr3_r, convert.(Complex{Float64},gr3_r.ϵkGrid))
         @test all(abs.(gr2_r.expand_cache .- convert.(Complex{Float64},ek2)) .< 1.0/10^10)
         @test all(abs.(gr3_r.expand_cache .- convert.(Complex{Float64},ek3)) .< 1.0/10^10)
+        #@test sum(gr2_r.kMult) == Nk(gr2_r)
+        #@test sum(gr3_r.kMult) == Nk(gr3_r)
     end
 end
 

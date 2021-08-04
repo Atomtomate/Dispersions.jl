@@ -99,9 +99,10 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cP_2D})
+    D = length(gridshape(kG))
     kGrid = reshape(kG.kGrid, gridshape(kG))
     ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
-    ind = collect(Base.product([1:kG.Ns for Di in 1:2]...))
+    ind = collect(Base.product([1:kG.Ns for Di in 1:D]...))
 
     ll = floor(Int,size(kGrid,1)/2 + 1)
     la = ceil(Int,kG.Ns/2) .- 1
@@ -111,24 +112,17 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
     grid_red = GridPoints2D(undef, length(index))
     ϵk_red = GridDisp(undef, length(index))
 
+    # Compute reduced arrays
     for (i,ti) in enumerate(index)
         ind_red[i] = ind[ti...]
         grid_red[i] = kGrid[ti...]
         ϵk_red[i] = ϵkGrid[ti...]
     end
 
-    expand_perms = Vector{Vector{CartesianIndex{2}}}(undef, length(ind_red))
-    for (ri, redInd) in enumerate(ind_red)
-        perms = unique(collect(permutations(redInd)))
-        expand_perms[ri] = Vector{CartesianIndex{2}}(undef, length(perms))
-        for (ip,p) in enumerate(perms)
-            expand_perms[ri][ip] = CartesianIndex(p...)
-        end
-    end
+    kMult, expand_perms = build_expand_mapping_SC(D, kG.Ns, ind_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
-	kmult = kGrid_multiplicity(cP_2D, ind_red)
-    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red,
+    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red,
                               expand_perms, expand_cache, kG.fftw_plan)
 end
 
@@ -146,7 +140,7 @@ function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
             newArr[p] = arr[ri]
         end
     end
-    kG.Ns > 2 && expand_mirror!(newArr)
+    #kG.Ns > 2 && expand_mirror!(newArr)
     return newArr
 end
 
@@ -156,7 +150,7 @@ function expandKArr!(kG::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64}, 1})
             kG.expand_cache[p] = arr[ri]
         end
     end
-    kG.Ns > 2 && expand_mirror!(kG.expand_cache)
+    #kG.Ns > 2 && expand_mirror!(kG.expand_cache)
 end
 
 # ================================================================================ #
@@ -221,10 +215,10 @@ gridshape(kG::ReducedKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
 gridshape(kG::FullKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
 
 function reduceKGrid(kG::FullKGrid{cP_3D})
-    s = [kG.Ns for i in 1:3]
-    kGrid = reshape(kG.kGrid,s...)
-    ϵkGrid = reshape(kG.ϵkGrid,s...)
-    ind = collect(Base.product([1:kG.Ns for Di in 1:3]...))
+    kGrid = reshape(kG.kGrid, gridshape(kG))
+    ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
+    D = length(gridshape(kG))
+    ind = collect(Base.product([1:kG.Ns for Di in 1:D]...))
 
     ll = floor(Int,size(kGrid,1)/2 + 1)
     la = ceil(Int,kG.Ns/2) .- 1
@@ -240,42 +234,31 @@ function reduceKGrid(kG::FullKGrid{cP_3D})
         ϵk_red[i] = ϵkGrid[ti...]
     end
 
-    expand_perms = Vector{Vector{CartesianIndex{3}}}(undef, length(ind_red))
-    for (ri, redInd) in enumerate(ind_red)
-        perms = unique(collect(permutations(redInd)))
-        expand_perms[ri] = Vector{CartesianIndex{3}}(undef, length(perms))
-        for (ip,p) in enumerate(perms)
-            expand_perms[ri][ip] = CartesianIndex(p...)
-        end
-    end
-
+    kMult, expand_perms = build_expand_mapping_SC(D, kG.Ns, ind_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
-	kmult = kGrid_multiplicity(cP_3D, ind_red)
-    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red, 
+    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red, 
                               expand_perms, expand_cache, kG.fftw_plan)
 end
 
 
-function expandKArr(kG::ReducedKGrid{cP_3D}, arr::Array{T, 1}) where T
+function expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2, 1}) where {T1 <: Union{cP_2D, cP_3D}, T2 <: Any}
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    newArr = Array{T}(undef, gridshape(kG))
+    newArr = Array{T2}(undef, gridshape(kG))
     for (ri,perms) in enumerate(kG.expand_perms)
         for p in perms
             newArr[p] = arr[ri]
         end
     end
-    kG.Ns > 2 && expand_mirror!(newArr)
     return newArr
 end
 
-function expandKArr!(kG::ReducedKGrid{cP_3D}, arr::Array{Complex{Float64}, 1}) 
+function expandKArr!(kG::ReducedKGrid{T1}, arr::Array{Complex{Float64}, 1}) where {T1 <: Union{cP_2D, cP_3D}}
     for (ri,perms) in enumerate(kG.expand_perms)
         for p in perms
             kG.expand_cache[p] = arr[ri]
         end
     end
-    kG.Ns > 2 && expand_mirror!(kG.expand_cache)
 end
 
 
@@ -306,63 +289,34 @@ function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 
     return res
 end
 
-function expand_mirror!(arr::Array{T, 2}) where T 
-    N = size(arr,1)
-    al = ceil(Int,N/2)
-
-    arr[1:al-1,al:end] = arr[end-1:-1:iseven(N)+al,al:end]
-    arr[1:end,1:al-1] = arr[1:end,end-1:-1:al+iseven(N)]
-
-    return arr
-end
-
-function expand_mirror!(arr::Array{T, 3}) where T
-    N = size(arr,1)
-    al = ceil(Int,N/2) - 1
-    ne = Int(iseven(N))
-
-    arr[1:al,al+1:end,al+1:end] = arr[end-1:-1:al+1+ne,al+1:end,al+1:end]
-    arr[:,1:al,al+1:end] = arr[:,end-1:-1:al+1+ne,al+1:end]
-    for i in 1:al
-        arr[i,i,al+1:end] = arr[end-i,end-i,al+1:end]
-    end
-    arr[:,:,1:al] .= arr[:,:,end-1:-1:al+1+ne]
-    for i in 1:al
-        arr[i,i,i] = arr[end-i,end-i,end-i]
-    end
-    return arr
-end
-
-
-"""
-    kGrid_multiplicity(::Type{cP_2D}, kIndices)
-    kGrid_multiplicity(::Type{cP_3D}, kIndices)
-
-Given a set of reduced indices, produce list of multiplicities for each point
-"""
-kGrid_multiplicity(::Type{cP_3D}, kIndices) = kGrid_multiplicity(cP_2D, kIndices)
-function kGrid_multiplicity(::Type{cP_2D}, kIndices)
-    min_ind = minimum(kIndices)
-    max_ind = maximum(kIndices)
-    function borderFactor(el)
-        val = 1.0
-        for i in 1:length(el)
-            val = if (el[i] == min_ind[i] || el[i] == max_ind[i]) val*0.5 else val end
-        end
-        return val
-    end
-    if length(min_ind) == 2
-        res = map(el -> borderFactor(el)*8/((el[2]==el[1]) + 1), kIndices)
-    elseif length(min_ind) == 3
-        res = map(el -> borderFactor(el)*48/( (el[2]==el[1]) + (el[3]==el[2]) + 3*(el[3]==el[1]) + 1), kIndices)
-    else
-        throw("Multiplicity of k points only implemented for 2D and 3D")
-    end
-    return res
-end
 
 gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
-
 ifft_post!(::Type{cP_2D}, x::Array{T,2}) where T <: Number = reverse!(x) 
 ifft_post!(::Type{cP_3D}, x::Array{T,3}) where T <: Number = reverse!(x) 
+
+function build_expand_mapping_SC(D::Int, Ns::Int, ind_red::Array)
+    expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
+    kMult = Array{Int,1}(undef, length(ind_red))
+
+    mirror_list = Array{NTuple{D,Int},1}()
+    for i in 1:D
+        push!(mirror_list, map( x-> tuple((x)...) ,unique(permutations([(j <= i) ? Ns : 0 for j in 1:D ])))...)
+    end
+    #  - Expand mapping
+    for (ri, redInd) in enumerate(ind_red)
+        perms = unique(permutations(redInd))
+        expand_perms[ri] = Vector{CartesianIndex{D}}()
+        for (ip,p) in enumerate(perms)
+            push!(expand_perms[ri], CartesianIndex(p...))
+            for mi in mirror_list
+                if all(abs.(mi .- p) .> 0)
+                    push!(expand_perms[ri], CartesianIndex(abs.(mi .- p)...))
+                end
+            end
+        end
+        expand_perms[ri] = unique(expand_perms[ri])
+        kMult[ri] = length(expand_perms[ri])
+    end
+    return kMult, expand_perms
+end
