@@ -63,23 +63,3 @@ end
         #@test sum(gr3_r.kMult) == Nk(gr3_r)
     end
 end
-
-
-#TODO: this is a placeholder until convolution is ported from lDGA code
-@testset "ifft" begin
-    tf = reduce_old ∘ ifft_cut_mirror
-    for NN in 3:16
-        gr2 = gen_kGrid("2Dsc-1.3",NN)
-        gr3 = gen_kGrid("3Dsc-1.3",NN)
-        arr2 = randn(NN,NN)
-        arr3 = randn(NN,NN,NN)
-        #r1 = test_cut(arr2)
-        #r2 = test_cut(arr3)
-        r3 = Dispersions.reduceKArr_reverse(gr2, arr2)
-        r4 = Dispersions.reduceKArr_reverse(gr3, arr3)
-        r5 = tf(arr2)
-        r6 = tf(arr3)
-        @test all(r5 .≈ r3)
-        @test all(r6 .≈ r4)
-    end
-end

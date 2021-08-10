@@ -18,9 +18,9 @@ Fields
 - **`Nk`**    : `Int` k points in full grid.
 - **`kGrid`** : `Array{Tuple{Float64, ...}}` of kGrids. Each element is a D-tuple
 """
-struct FullKGrid_File  <: FullKGrid{FileDisp}
+struct FullKGrid_File{D}  <: FullKGrid{FileDisp, D}
     Nk::Int
-    kGrid::GridPoints3D
+    kGrid::GridPoints{3}
     ϵkGrid::GridDisp
     shape::Tuple{Int,Int,Int}
     function FullKGrid_File(path::String)
@@ -28,7 +28,7 @@ struct FullKGrid_File  <: FullKGrid{FileDisp}
         shape, kGrid, disp = h5open(path, "r") do f
             read(f, "shape"), read(f, "data")[:,1:3], read(f, "data")[:,4]
         end
-        new(length(disp), kGrid, disp, shape)
+        new{D}(length(disp), kGrid, disp, shape)
     end
 end
 
@@ -46,10 +46,10 @@ Fields
 - **`kMult`** : `Array{Float64,1}` multiplicity of point, used for calculations involving reduced k grids.
 - **`kGrid`** : `Array{Tuple{Float64,...}}` k points of reduced grid.
 """
-struct ReducedKGrid_File  <: ReducedKGrid{FileDisp}
+struct ReducedKGrid_File{D}  <: ReducedKGrid{FileDisp, D}
     Nk::Int
     kMult::Array{Float64,1}
-    kGrid::GridPoints3D
+    kGrid::GridPoints{3}
     ϵkGrid::GridDisp
     shape::Tuple{Int,Int,Int}
 end

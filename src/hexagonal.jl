@@ -21,10 +21,10 @@ Fields
 - **`ϵkGrid`** : `Array{Tuple{Float64, ...}}` dispersion relation.
 - **`t`**      : `Float64` hopping parameter
 """
-struct FullKGrid_p6m  <: FullKGrid{p6m}
+struct FullKGrid_p6m  <: FullKGrid{p6m,2}
     Nk::Int
     Ns::Int
-    kGrid::GridPoints2D
+    kGrid::GridPoints{2}
     ϵkGrid::GridDisp
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
@@ -53,13 +53,13 @@ Fields
 - **`kMult`** : `Array{Float64,1}` multiplicity of point, used for calculations involving reduced k grids.
 - **`kGrid`** : `Array{Tuple{Float64,...}}` k points of reduced grid.
 """
-struct ReducedKGrid_p6m  <: ReducedKGrid{p6m}
+struct ReducedKGrid_p6m  <: ReducedKGrid{p6m, 2}
     Nk::Int
     Ns::Int
     t::Float64
-    kInd::GridInd2D
+    kInd::GridInd{2}
     kMult::Array{Float64,1}
-    kGrid::GridPoints2D
+    kGrid::GridPoints{2}
     ϵkGrid::GridDisp
     expand_cache::Array{Complex{Float64},2}
     fftw_plan::FFTW.cFFTWPlan
@@ -108,8 +108,9 @@ function reduceKGrid(kG::FullKGrid{p6m})
 end
 
 function expandKArr!(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
-    for i in eachindex(arr)
-        kG.expand_cache[i] = reshape(arr,gridshape(kG))[i]
+    v = reshape(arr,gridshape(kG))
+    @simd for i in eachindex(arr)
+        @inbounds kG.expand_cache[i] = v[i]
     end
 end
 
@@ -118,7 +119,7 @@ end
 
 Expands array of values on reduced k grid back to full BZ.
 """
-function expandKArr(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
+function expandKArr(kG::ReducedKGrid_p6m, arr::Array{T, 1}) where T
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
     #gs  = gridshape(kG)
     #nh  = floor(Int,gridshape(kG)[2]/2) + 1
@@ -129,16 +130,18 @@ function expandKArr(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
     return reshape(arr, gridshape(kG))
 end
 
-function reduceKArr(kG::ReducedKGrid{p6m}, arr::AbstractArray)
+function reduceKArr(kG::ReducedKGrid_p6m, arr::AbstractArray)
     #nh  = floor(Int,gridshape(kG)[2]/2) + 1
     #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
     return arr[:]
 end
 
-function reduceKArr!(kG::ReducedKGrid{p6m}, res::AbstractArray, arr::AbstractArray)
+function reduceKArr!(kG::ReducedKGrid_p6m, res::AbstractArray, arr::AbstractArray)
     #nh  = floor(Int,gridshape(kG)[2]/2) + 1
     #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
-    res[:] = arr[:]
+    @simd for i in 1:length(res)
+        @inbounds res[i] = arr[i]
+    end
 end
 
 
@@ -155,9 +158,9 @@ function kGrid_multiplicity(::Type{p6m}, kIndices)
     return ones(length(kIndices))
 end
 
-gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
+gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
 
-function ifft_post!(::Type{p6m}, x::Array{T,2}) where T <: Number
+function ifft_post!(::Type{ReducedKGrid_p6m}, x::Array{T,2}) where T <: Number
     nh = trunc(Int, size(x,2)/2)
     x[1:nh,1:nh],x[nh+1:end,nh+1:end] = x[nh+1:end,nh+1:end],x[1:nh,1:nh]
     x[1:nh,nh+1:end],x[nh+1:end,1:nh] = x[nh+1:end,1:nh],x[1:nh,nh+1:end]

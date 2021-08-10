@@ -1,10 +1,10 @@
-function gen_kGrid(kg::String, Nk::Int=0; full=false)
+function gen_kGrid(kg::String, Nk::Int; full=false)
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
-        FullKGrid_cP_3D(Nk, parse(Float64, data[2]))
+        FullKGrid_cP(3, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "2dsc"
-        FullKGrid_cP_2D(Nk, parse(Float64, data[2]))
+        FullKGrid_cP(2, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "p6m"
         FullKGrid_p6m(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "file"
@@ -27,7 +27,7 @@ end
 
 shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
 """
-gridshape(kG::T) where T <: KGrid = throw(ArgumentError("Unkown kGrid"))
+gridshape(kG::T) where T <: KGrid = throw(ArgumentError("KGrid Instance of $(kG) not found"))
 
 """
     Nk(kG::T) where T <: KGrid
@@ -57,9 +57,9 @@ dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
 Returns the grid on the fully irredrucible BZ.
 """
-reduceKGrid(kGrid::FullKGrid{T}) where T <: KGridType = throw(MethodError("KGrid Instance not found")) 
+reduceKGrid(kG::FullKGrid) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
 
-expandKArr(kGrid::ReducedKGrid{T}, arr::Array) where T <: KGridType = throw(MethodError("KGrid Instance not found")) 
+expandKArr(kG::ReducedKGrid, arr::Array) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
 
 
 # ------------------------------ Private Functions -----------------------------
@@ -69,17 +69,17 @@ expandKArr(kGrid::ReducedKGrid{T}, arr::Array) where T <: KGridType = throw(Meth
 Generates dispersion relation for array of k-points. Usually only accessed by constructor of
 KGrid
 """
-gen_ϵkGrid(::Type{T1}, kGrid::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number} = throw(MethodError("KGrid Instance not found"))
+gen_ϵkGrid(::Type{T1}, kG::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number} = throw(ArgumentError("KGrid Instance of $(kG) not found"))
 
 
-function conv(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
+function conv(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
     Nk(kG) == 1 && return arr1 .* arr2
     tmp = reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft 
-    ifft_post!(T, tmp)
+    ifft_post!(typeof(kG), tmp)
     return reduceKArr(kG, tmp) ./ Nk(kG)
 end
 
-function conv!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1}) where T <: KGridType
+function conv!(kG::ReducedKGrid, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
     Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     expandKArr!(kG, arr1)
     tmp = fft(kG.expand_cache)
@@ -87,40 +87,44 @@ function conv!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1
     fft!(kG.expand_cache)
     kG.expand_cache[:] = kG.expand_cache .* tmp
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(T, kG.expand_cache)
+    ifft_post!(typeof(kG), kG.expand_cache)
     reduceKArr!(kG, res, kG.expand_cache) 
     res[:] = res ./ Nk(kG)
 end
 
 
-function conv_fft1(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
+function conv_fft1(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64}})
     Nk(kG) == 1 && return arr1 .* arr2
     newArr = Array{eltype(arr1),1}(undef, length(kG.kInd))
     conv_fft1!(kG, newArr, arr1, reshape(arr2, gridshape(kG)))
     return newArr
 end
 
-function conv_fft1!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
+function conv_fft1!(kG::ReducedKGrid, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64}})
     Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     expandKArr!(kG, arr1)
     AbstractFFTs.mul!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    kG.expand_cache[:] = (kG.expand_cache .* arr2)
+    @simd for i in 1:length(kG.expand_cache)
+        @inbounds kG.expand_cache[i] *= arr2[i] 
+    end
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(T, kG.expand_cache)
+    ifft_post!(typeof(kG), kG.expand_cache)
     reduceKArr!(kG, res, kG.expand_cache) 
-    res[:] = res ./ Nk(kG)
+    @simd for i in 1:length(res)
+        @inbounds res[i] /= kG.Nk
+    end
 end
 
-function conv_fft(kG::ReducedKGrid{T}, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
+function conv_fft(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}})
     Nk(kG) == 1 && return arr1 .* arr2
-    reduceKArr(kG, ifft_post!(T, ifft(arr1 .* arr2))) ./ Nk(kG)
+    reduceKArr(kG, ifft_post!(typeof(kG), ifft(arr1 .* arr2))) ./ Nk(kG)
 end
 
-function conv_fft!(kG::ReducedKGrid{T}, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}}) where {T <: KGridType}
+function conv_fft!(kG::ReducedKGrid, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}})
     Nk(kG) == 1 && (res[:] = arr1 .* arr2)
     kG.expand_cache[:] = arr1 .* arr2
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(T, kG.expand_cache)
+    ifft_post!(typeof(kG), kG.expand_cache)
     reduceKArr!(kG, res, kG.expand_cache) 
     res[:] = res ./ Nk(kG)
 end

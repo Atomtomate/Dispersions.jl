@@ -13,9 +13,9 @@ julia> gen_cP_kGrid(2, 2)
 """
 function gen_cP_kGrid(Nk::Int64, D::Int64, t::Float64)
     if D == 2
-        return FullKGrid_cP_2D(Nk, t)
+        return FullKGrid_cP(2, Nk, t)
     elseif D == 3
-        return FullKGrid_cP_3D(Nk, t)
+        return FullKGrid_cP(3, Nk, t)
     else
         throw("Simple Cubic only implemented for 2D and 3D")
     end
@@ -30,32 +30,32 @@ end
 #                                     Types                                        #
 # -------------------------------------------------------------------------------- #
 
-abstract type cP_2D <: KGridType end
+abstract type cP <: KGridType end
 
 """
-    FullKGrid_cP_2D  <: FullKGrid{cP_2D}
+    FullKGrid_cP{D}  <: FullKGrid{cP{D}}
 
 Fields
 -------------
 - **`kGrid`** : `Array{Tuple{Float64, ...}}` of kGrids. Each element is a D-tuple
 """
-struct FullKGrid_cP_2D  <: FullKGrid{cP_2D}
+struct FullKGrid_cP{D} <: FullKGrid{cP, D}
     Nk::Int
     Ns::Int
-    kGrid::GridPoints2D
+    kGrid::Array{NTuple{D,Float64},1}
     ϵkGrid::GridDisp
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
-    function FullKGrid_cP_2D(Nk::Int, t::Float64; fftw_plan=nothing)
+    function FullKGrid_cP(D::Int, Nk::Int, t::Float64; fftw_plan=nothing)
         kx = [(2*π/Nk) * j - π for j in 1:Nk]
-        kGrid  = collect(Base.product([kx for Di in 1:2]...))[:]
-        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, Nk, Nk), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
-        new(Nk^2, Nk, kGrid, gen_ϵkGrid(cP_2D,kGrid,t),t,fftw_plan)
+        kGrid  = collect(Base.product([kx for Di in 1:D]...))[:]
+        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        new{D}(Nk^D, Nk, kGrid, gen_ϵkGrid(cP,kGrid,t),t,fftw_plan)
     end
 end
 
 """
-    ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
+    ReducedKGrid_cP{D}  <: ReducedKGrid{cP{D}}
 
 Reduced k grid only containing points necessary for computation of quantities involving 
 this grid type and multiplicity of each stored point.
@@ -67,15 +67,15 @@ Fields
 - **`kMult`** : `Array{Float64,1}` multiplicity of point, used for calculations involving reduced k grids.
 - **`kGrid`** : `Array{Tuple{Float64,...}}` k points of reduced grid.
 """
-struct ReducedKGrid_cP_2D  <: ReducedKGrid{cP_2D}
+struct ReducedKGrid_cP{D}  <: ReducedKGrid{cP,D}
     Nk::Int
     Ns::Int
     t::Float64
-    kInd::GridInd2D
+    kInd::Array{NTuple{D,Int},1}
     kMult::Array{Float64,1}
-    kGrid::GridPoints2D
+    kGrid::Array{NTuple{D,Float64},1}
     ϵkGrid::GridDisp
-    expand_perms::Vector{Vector{CartesianIndex{2}}}
+    expand_perms::Vector{Vector{CartesianIndex{D}}}
     expand_cache::Array{Complex{Float64}}
     fftw_plan::FFTW.cFFTWPlan
 end
@@ -84,13 +84,13 @@ end
 #                                   Interface                                      #
 # -------------------------------------------------------------------------------- #
 
-gridshape(kG::ReducedKGrid_cP_2D) = (kG.Ns, kG.Ns)
-gridshape(kG::FullKGrid_cP_2D) = (kG.Ns, kG.Ns)
+gridshape(kG::ReducedKGrid_cP{D}) where D = ntuple(_ -> kG.Ns, D)
+gridshape(kG::FullKGrid_cP{D}) where D = ntuple(_ -> kG.Ns, D)
 
 # ---------------------------- BZ to f. irr. BZ -------------------------------
 
 """
-    reduceKGrid(kG::FullKGrid{T}) where T <: Union{cP_2D, cP_3D}
+    reduceKGrid(kG::FullKGrid{T}) where T <: cP
 
 Returns the grid on the fully irredrucible BZ.
 Filters an arbitrary grid, defined on a full kGrid, so that only 
@@ -98,18 +98,23 @@ the lower triangle remains, i.e.
 for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ... 
 is fulfilled.
 """
-function reduceKGrid(kG::FullKGrid{cP_2D})
-    D = length(gridshape(kG))
+function reduceKGrid(kG::FullKGrid{cP,D}) where D 
     kGrid = reshape(kG.kGrid, gridshape(kG))
     ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
     ind = collect(Base.product([1:kG.Ns for Di in 1:D]...))
 
-    ll = floor(Int,size(kGrid,1)/2 + 1)
-    la = ceil(Int,kG.Ns/2) .- 1
-    index = [[x + la, y + la]  for x=1:ll for y=1:x]
+    ll = floor(Int,size(kGrid,1)/2 + 1) - 1
+    la = ceil(Int,kG.Ns/2)
+    index = if D == 2
+        [[x,y]  for x=la:ll+la for y=la:x]
+    elseif D == 3
+        [[x,y,z] for x=la:ll+la for y=la:x for z = la:y]
+    else
+        error("D ∉ [2,3] not implemented yet!")
+    end
 
-    ind_red = GridInd2D(undef, length(index))
-    grid_red = GridPoints2D(undef, length(index))
+    ind_red = GridInd{D}(undef, length(index))
+    grid_red = GridPoints{D}(undef, length(index))
     ϵk_red = GridDisp(undef, length(index))
 
     # Compute reduced arrays
@@ -122,178 +127,54 @@ function reduceKGrid(kG::FullKGrid{cP_2D})
     kMult, expand_perms = build_expand_mapping_SC(D, kG.Ns, ind_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
-    return ReducedKGrid_cP_2D(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red,
+    return ReducedKGrid_cP{D}(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red,
                               expand_perms, expand_cache, kG.fftw_plan)
 end
 
 """
-    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1}) where {T1 <: Union{cP_2D,cP_3D}, T2 <: Any
+    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1})
 
 Expands array of values on reduced k grid back to full BZ.
 """
 
-function expandKArr(kG::ReducedKGrid{cP_2D}, arr::Array{T, 1}) where T
+function expandKArr(kG::ReducedKGrid_cP, arr::Array{T, 1}) where {T <: Any}
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    newArr = Array{eltype(arr)}(undef, gridshape(kG)...)
+    res = Array{eltype(arr)}(undef, gridshape(kG)...)
+    expandKArr!(kG, res, arr)
+    return res
+end
+
+function expandKArr!(kG::ReducedKGrid_cP, arr::Array{Complex{Float64}, 1})
     for (ri,perms) in enumerate(kG.expand_perms)
-        for p in perms
-            newArr[p] = arr[ri]
+        @simd for p in perms
+            @inbounds kG.expand_cache[p] = arr[ri]
         end
     end
-    #kG.Ns > 2 && expand_mirror!(newArr)
-    return newArr
 end
 
-function expandKArr!(kG::ReducedKGrid{cP_2D}, arr::Array{Complex{Float64}, 1})
+function expandKArr!(kG::ReducedKGrid_cP, res::Array{T}, arr::Array{T, 1}) where T
     for (ri,perms) in enumerate(kG.expand_perms)
-        for p in perms
-            kG.expand_cache[p] = arr[ri]
-        end
-    end
-    #kG.Ns > 2 && expand_mirror!(kG.expand_cache)
-end
-
-# ================================================================================ #
-#                                Simple Cubic 3D                                   #
-# ================================================================================ #
-
-# -------------------------------------------------------------------------------- #
-#                                     Types                                        #
-# -------------------------------------------------------------------------------- #
-abstract type cP_3D <: KGridType end
-
-"""
-    FullKGrid_cP_3D  <: FullKGrid{cP_3D}
-
-Fields
--------------
-- **`kGrid`** : `Array{Tuple{Float64, ...}}` of kGrids. Each element is a D-tuple
-"""
-struct FullKGrid_cP_3D  <: FullKGrid{cP_3D}
-    Nk::Int
-    Ns::Int
-    kGrid::GridPoints3D
-    ϵkGrid::GridDisp
-    t::Float64
-    fftw_plan::FFTW.cFFTWPlan
-    function FullKGrid_cP_3D(Nk::Int, t::Float64; fftw_plan=nothing)
-        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, Nk, Nk, Nk), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
-        kx = [(2*π/Nk) * j - π for j in 1:Nk];
-        kGrid  = collect(Base.product([kx for Di in 1:3]...))[:]
-        new(Nk^3, Nk, kGrid, gen_ϵkGrid(cP_3D,kGrid,t),t, fftw_plan)
-    end
-end
-
-
-"""
-    ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
-
-Reduced k grid only containing points necessary for computation of quantities involving 
-this grid type and multiplicity of each stored point.
-
-Fields
--------------
-- **`Nk`**    : `Int` k points in full grid.
-- **`kInd`**  : `Array{Tuple{Int,...}}` indices in full grid. used for reconstruction of full grid.
-- **`kMult`** : `Array{Float64,1}` multiplicity of point, used for calculations involving reduced k grids.
-- **`kGrid`** : `Array{Tuple{Float64,...}}` k points of reduced grid.
-"""
-struct ReducedKGrid_cP_3D  <: ReducedKGrid{cP_3D}
-    Nk::Int
-    Ns::Int
-    t::Float64
-    kInd::GridInd3D
-    kMult::Array{Float64,1}
-    kGrid::GridPoints3D
-    ϵkGrid::GridDisp
-    expand_perms::Vector{Vector{CartesianIndex{3}}}
-    expand_cache::Array{Complex{Float64}}
-    fftw_plan::FFTW.cFFTWPlan
-end
-
-gridshape(kG::ReducedKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
-gridshape(kG::FullKGrid_cP_3D) = (kG.Ns, kG.Ns, kG.Ns)
-
-function reduceKGrid(kG::FullKGrid{cP_3D})
-    kGrid = reshape(kG.kGrid, gridshape(kG))
-    ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
-    D = length(gridshape(kG))
-    ind = collect(Base.product([1:kG.Ns for Di in 1:D]...))
-
-    ll = floor(Int,size(kGrid,1)/2 + 1)
-    la = ceil(Int,kG.Ns/2) .- 1
-    index = [[x+la,y+la,z+la] for x=1:ll for y=1:x for z = 1:y]
-    ind_red = GridInd3D(undef, length(index))
-    grid_red = GridPoints3D(undef, length(index))
-    ϵk_red = GridDisp(undef, length(index))
-
-
-    for (i,ti) in enumerate(index)
-        ind_red[i] = ind[ti...]
-        grid_red[i] = kGrid[ti...]
-        ϵk_red[i] = ϵkGrid[ti...]
-    end
-
-    kMult, expand_perms = build_expand_mapping_SC(D, kG.Ns, ind_red)
-    expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
-
-    return ReducedKGrid_cP_3D(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red, 
-                              expand_perms, expand_cache, kG.fftw_plan)
-end
-
-
-function expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2, 1}) where {T1 <: Union{cP_2D, cP_3D}, T2 <: Any}
-    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    newArr = Array{T2}(undef, gridshape(kG))
-    for (ri,perms) in enumerate(kG.expand_perms)
-        for p in perms
-            newArr[p] = arr[ri]
-        end
-    end
-    return newArr
-end
-
-function expandKArr!(kG::ReducedKGrid{T1}, arr::Array{Complex{Float64}, 1}) where {T1 <: Union{cP_2D, cP_3D}}
-    for (ri,perms) in enumerate(kG.expand_perms)
-        for p in perms
-            kG.expand_cache[p] = arr[ri]
+        @simd for p in perms
+            @inbounds res[p] = arr[ri]
         end
     end
 end
 
 
-function reduceKArr(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
+function reduceKArr(kG::ReducedKGrid_cP, arr::AbstractArray)
     res = Array{eltype(arr), 1}(undef, length(kG.kInd))
-    for (i,ki) in enumerate(kG.kInd)
-        res[i] = arr[ki...]
-    end
+    reduceKArr!(kG, res, arr)
     return res
 end
 
-function reduceKArr!(kG::ReducedKGrid{T1}, res::AbstractArray, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
+function reduceKArr!(kG::ReducedKGrid_cP, res::AbstractArray, arr::AbstractArray)
     for (i,ki) in enumerate(kG.kInd)
-        res[i] = arr[ki...]
+        @inbounds res[i] = arr[ki...]
     end
 end
 
-
-#TODO: this is a placeholder until convolution is ported from lDGA code
-function reduceKArr_reverse(kG::ReducedKGrid{T1}, arr::AbstractArray) where {T1 <: Union{cP_2D, cP_3D}}
-    res =  Array{eltype(arr)}(undef, length(kG.kInd))
-    N = size(arr)
-    ll = floor(Int,size(arr,1)/2 + 1)
-    index = T1 === cP_2D ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
-    for (i,ti) in enumerate(index)
-        res[i] = arr[(N .- ti)...]
-    end
-    return res
-end
-
-
-gen_ϵkGrid(::Type{cP_2D}, kGrid::GridPoints2D, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
-gen_ϵkGrid(::Type{cP_3D}, kGrid::GridPoints3D, t::T1) where T1 <: Number = collect(map(kᵢ -> -t*sum(cos.(kᵢ)), kGrid))
-ifft_post!(::Type{cP_2D}, x::Array{T,2}) where T <: Number = reverse!(x) 
-ifft_post!(::Type{cP_3D}, x::Array{T,3}) where T <: Number = reverse!(x) 
+gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
+ifft_post!(::Type{ReducedKGrid_cP{N}}, x::Array{T,N}) where {N, T <: Number} = reverse!(x) 
 
 function build_expand_mapping_SC(D::Int, Ns::Int, ind_red::Array)
     expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
