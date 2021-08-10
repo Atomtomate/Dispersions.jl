@@ -15,7 +15,7 @@ export gridPoints, Nk, gridshape, dispersion
 export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
 # grids 
-export gen_kGrid, cP_2D, cP_3D, p6m, FileDisp
+export gen_kGrid, cP, p6m, FileDisp
 
 # sum types
 export KSum

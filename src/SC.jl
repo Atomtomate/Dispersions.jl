@@ -152,7 +152,7 @@ function expandKArr!(kG::ReducedKGrid_cP, arr::Array{Complex{Float64}, 1})
     end
 end
 
-function expandKArr!(kG::ReducedKGrid_cP, res::Array{T}, arr::Array{T, 1}) where T
+function expandKArr!(kG::ReducedKGrid_cP, res::AbstractArray{T,D}, arr::Array{T, 1}) where {T,D}
     for (ri,perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds res[p] = arr[ri]
@@ -161,13 +161,13 @@ function expandKArr!(kG::ReducedKGrid_cP, res::Array{T}, arr::Array{T, 1}) where
 end
 
 
-function reduceKArr(kG::ReducedKGrid_cP, arr::AbstractArray)
-    res = Array{eltype(arr), 1}(undef, length(kG.kInd))
+function reduceKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T,D}) where {T,D}
+    res = Array{T, 1}(undef, length(kG.kInd))
     reduceKArr!(kG, res, arr)
     return res
 end
 
-function reduceKArr!(kG::ReducedKGrid_cP, res::AbstractArray, arr::AbstractArray)
+function reduceKArr!(kG::ReducedKGrid_cP{D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {T,D}
     for (i,ki) in enumerate(kG.kInd)
         @inbounds res[i] = arr[ki...]
     end
