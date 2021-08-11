@@ -137,9 +137,9 @@ end
 Expands array of values on reduced k grid back to full BZ.
 """
 
-function expandKArr(kG::ReducedKGrid_cP, arr::AbstractArray{T, 1}) where {T <: Any}
+function expandKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {T,D}
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    res = Array{eltype(arr)}(undef, gridshape(kG)...)
+    res = similar(arr, gridshape(kG)...)
     expandKArr!(kG, res, arr)
     return res
 end
@@ -162,7 +162,7 @@ end
 
 
 function reduceKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T,D}) where {T,D}
-    res = Array{T, 1}(undef, length(kG.kInd))
+    res = similar(arr, length(kG.kInd))
     reduceKArr!(kG, res, arr)
     return res
 end

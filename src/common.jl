@@ -27,14 +27,14 @@ end
 
 shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
 """
-gridshape(kG::T) where T <: KGrid = throw(ArgumentError("KGrid Instance of $(kG) not found"))
+gridshape(kG) = throw(ArgumentError("KGrid Instance of $(kG) not found"))
 
 """
     Nk(kG::T) where T <: KGrid
 
 Total number of k points (length of `kGrid.kGrid` for full grids). 
 """
-Nk(kG::T) where T <: KGrid = kG.Nk
+Nk(kG) = kG.Nk
 
 """
     gridPoints(kG::T)::Int where T <: KGrid
@@ -57,20 +57,12 @@ dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
 Returns the grid on the fully irredrucible BZ.
 """
-reduceKGrid(kG::FullKGrid) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
+reduceKGrid(kG) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
 
-expandKArr(kG::ReducedKGrid, arr::Array) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
+expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
 
 
-# ------------------------------ Private Functions -----------------------------
-"""
-    gen_ϵkGrid(::T1, kGrid::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number}
-
-Generates dispersion relation for array of k-points. Usually only accessed by constructor of
-KGrid
-"""
-gen_ϵkGrid(::Type{T1}, kG::T2, t::T3) where {T1 <: KGridType, T2 <: Array, T3 <: Number} = throw(ArgumentError("KGrid Instance of $(kG) not found"))
-
+# ------------------------------ Convolution Functions -----------------------------
 
 function conv(kG::ReducedKGrid, arr1::AbstractArray{Complex{Float64},1}, arr2::AbstractArray{Complex{Float64},1})
     Nk(kG) == 1 && return arr1 .* arr2
