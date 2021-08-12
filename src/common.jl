@@ -27,7 +27,7 @@ end
 
 shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
 """
-gridshape(kG) = throw(ArgumentError("KGrid Instance of $(kG) not found"))
+gridshape(kG) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found"))
 
 """
     Nk(kG::T) where T <: KGrid
@@ -57,9 +57,9 @@ dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
 Returns the grid on the fully irredrucible BZ.
 """
-reduceKGrid(kG) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
+reduceKGrid(kG) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
 
-expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(kG) not found")) 
+expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
 
 
 # ------------------------------ Convolution Functions -----------------------------
@@ -118,6 +118,7 @@ function conv_fft!(kG::ReducedKGrid, res::AbstractArray{Complex{Float64},1}, arr
     @simd for i in eachindex(kG.expand_cache)
         @inbounds kG.expand_cache[i] = arr1[i] .* arr2[i]
     end
+    kG.expand_cache[:] = arr1 .* arr2
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
     ifft_post!(typeof(kG), kG.expand_cache)
     reduceKArr!(kG, res, kG.expand_cache) 
