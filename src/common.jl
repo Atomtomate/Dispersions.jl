@@ -114,9 +114,14 @@ end
 
 function conv_fft!(kG::ReducedKGrid, res::AbstractArray{Complex{Float64},1}, arr1::AbstractArray{Complex{Float64}}, arr2::AbstractArray{Complex{Float64}})
     Nk(kG) == 1 && (res[:] = arr1 .* arr2)
-    kG.expand_cache[:] = arr1 .* arr2
+
+    @simd for i in eachindex(kG.expand_cache)
+        @inbounds kG.expand_cache[i] = arr1[i] .* arr2[i]
+    end
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
     ifft_post!(typeof(kG), kG.expand_cache)
     reduceKArr!(kG, res, kG.expand_cache) 
-    res[:] = res ./ Nk(kG)
+    @simd for i in 1:length(res)
+        @inbounds res[i] /= kG.Nk
+    end
 end
