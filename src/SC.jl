@@ -174,7 +174,7 @@ function reduceKArr!(kG::ReducedKGrid_cP{D}, res::AbstractArray{T,1}, arr::Abstr
 end
 
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
-ifft_post!(::Type{ReducedKGrid_cP{N}}, x::Array{T,N}) where {N, T <: Number} = reverse!(x) 
+ifft_post!(::Type{ReducedKGrid_cP{N}}, x::Array{T,N}) where {N, T <: Number} = identity(x) #reverse!(x) 
 
 function build_expand_mapping_SC(D::Int, Ns::Int, ind_red::Array)
     expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
