@@ -1,5 +1,7 @@
 using FFTW
+include("testFunctions.jl")
 # TODO error test for interface functions
+# TODO: this needs loads of tests for different lattices
 kG_2 = gen_kGrid("2Dsc-1.4",16)
 kG_3 = gen_kGrid("3Dsc-1.4",16)
 hexG = gen_kGrid("p6m-1.4",16)

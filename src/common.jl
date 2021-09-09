@@ -67,8 +67,7 @@ expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not f
 function conv(kG::ReducedKGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return arr1 .* arr2
     tmp = reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft 
-    ifft_post!(typeof(kG), tmp)
-    return reduceKArr(kG, tmp) ./ Nk(kG)
+    return reduceKArr(kG, ifft_post(kG, tmp)) ./ Nk(kG)
 end
 
 function conv!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
@@ -79,8 +78,7 @@ function conv!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::Abstrac
     fft!(kG.expand_cache)
     kG.expand_cache[:] = kG.expand_cache .* tmp
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(typeof(kG), kG.expand_cache)
-    reduceKArr!(kG, res, kG.expand_cache) 
+    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
     res[:] = res ./ Nk(kG)
 end
 
@@ -100,8 +98,7 @@ function conv_fft1!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::Ab
         @inbounds kG.expand_cache[i] *= arr2[i] 
     end
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(typeof(kG), kG.expand_cache)
-    reduceKArr!(kG, res, kG.expand_cache) 
+    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
     @simd for i in 1:length(res)
         @inbounds res[i] /= kG.Nk
     end
@@ -109,7 +106,7 @@ end
 
 function conv_fft(kG::ReducedKGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return arr1 .* arr2
-    reduceKArr(kG, ifft_post!(typeof(kG), ifft(arr1 .* arr2))) ./ Nk(kG)
+    reduceKArr(kG, ifft_post(kG, ifft(arr1 .* arr2))) ./ Nk(kG)
 end
 
 function conv_fft!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
@@ -120,8 +117,7 @@ function conv_fft!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::Abs
     end
     kG.expand_cache[:] = arr1 .* arr2
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    ifft_post!(typeof(kG), kG.expand_cache)
-    reduceKArr!(kG, res, kG.expand_cache) 
+    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
     @simd for i in 1:length(res)
         @inbounds res[i] /= kG.Nk
     end

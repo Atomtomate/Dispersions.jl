@@ -4,6 +4,7 @@ using Combinatorics
 using AbstractFFTs, FFTW
 using HDF5
 using LinearAlgebra
+using ShiftedArrays
 
 # general types
 export KGrid, FullKGrid, ReducedKGrid

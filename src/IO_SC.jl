@@ -1,29 +1,20 @@
-#Base.show(io::IO, fi::Union{FullKIndices_cP,FullKPoints_cP}) = 
-#        print(io, typeof(fi) <: FullKIndices ? "Index" : "GridPoints", "[",minimum(fi.grid),
-#              ":",maximum(fi.grid),"]: length:", length(fi.grid))
+function Base.show(io::IOT, gr::KGrid{T, D}) where {IOT <: IO, T<:KGridType, D}
+    if get(io, :compact, true)
+        print(io, "Reduced $T grid in $D dimensions with ", Nk(gr), " k-points.")
+    else
+        print(io, "Reduced $T grid in $D dimensions with ", Nk(gr), " k-points.\n
+   === Public Fields ===
+Nk    : total number of points
+Ns    : number of points per dimension
+kGrid : gridpoints
+kInd  : indices
+kMult : multiplicity per point
+t     : hopping amplitude
+ϵkGrid: dispersion")
+    end
+end
 
-#function Base.show(io::IO, ::MIME"text/plain", fi::Union{FullKIndices_cP{T},FullKPoints_cP{T}}) where T
-#    typestr = typeof(fi) <: FullKIndices ? "Index" : "GridPoints"
-#    if get(io, :compact, true)
-#        print(io, typestr, "[",minimum(fi.grid),":",maximum(fi.grid),"]: length:", length(fi.grid))
-#    else
-#        print(io, typestr, " for full k simple cubic grid in ", T == Ind2D ? "2" : "3",
-#              " Dimensions. From ", minimum(fi.grid), " to ", maximum(fi.grid), " with ", 
-#              length(fi.grid), " points.")
-#    end
-#end
-
-#Base.show(io::IO, gr::FullKGrid_cP{T1,T2}) where {T1,T2} = print(io, "FullKGrid_cP[", Nk(gr), "] for ", 
-#                                                                 T1 <: FullKIndices_cP{Ind2D} ? "2" : "3" , "D")
-
-#function Base.show(io::IO, ::MIME"text/plain", gr::FullKGrid_cP{T1,T2}) where {T1,T2}
-#    if get(io, :compact, true)
-#        print(io, "FullKGrid_cP[", Nk(gr), "] for ", T1 <: FullKIndices_cP{Ind2D} ? "2" : "3" , "D")
-#    else
-#        print(io, "FullKGrid for simple cubic lattice with size ", Nk(gr), " for ", 
-#              T1 <: FullKIndices_cP{Ind2D} ? "2" : "3" , "D")
-#    end
-#end
+Base.show(io::IOT, ::MIME"text/plain", gr::KGrid{T, D}) where {IOT <: IO, T<:KGridType, D} = show(io, gr)
 
 #= struct ReducedKIndices_cP{Ind<:Union{rInd2D, rInd3D}} <: ReducedKIndices{Array{Ind,1}} =# 
 #= struct ReducedKPoints_cP{gInd<:Union{rGridP2D, rGridP3D}} <: ReducedKPoints{Array{gInd,1}} =# 
