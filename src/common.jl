@@ -1,10 +1,10 @@
-function gen_kGrid(kg::String, Nk::Int; full=false)
+function gen_kGrid(kg::String, Nk::Int; full=false, sampling=[(2*π/Nk) * j - π for j in 1:Nk])
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
-        FullKGrid_cP(3, Nk, parse(Float64, data[2]))
+        FullKGrid_cP(3, Nk, parse(Float64, data[2]), sampling)
     elseif lowercase(data[1]) == "2dsc"
-        FullKGrid_cP(2, Nk, parse(Float64, data[2]))
+        FullKGrid_cP(2, Nk, parse(Float64, data[2]), sampling)
     elseif lowercase(data[1]) == "p6m"
         FullKGrid_p6m(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "file"
@@ -52,24 +52,61 @@ Returns dispersion relation of grid.
 dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
 # ------------------------------ Helper Functions -----------------------------
+export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 """
-    reduceKGrid(kGrid::FullKGrid{T}) where T <: KGridType
+    reduceKArr(kGrid::ReducedKGrid, arr)
 
-Returns the grid on the fully irredrucible BZ.
+Takes a kGrid `kGrid` and arbitrary data `arr` over a full BZ and returns an array with data over fully irreducible
+BZ. This is mainly used after convolutions, since they require data over the full BZ.
 """
-reduceKGrid(kG) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+reduceKArr(kG::ReducedKGrid, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
 
+"""
+    reduceKArr!(kGrid::ReducedKGrid, res, arr)
+
+Inplace version of [`reduceKArr`](@ref). The results are written to `res`.
+"""
+reduceKArr(kG::ReducedKGrid, res::AbstractArray, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+
+"""
+    expandKArr(kGrid::ReducedKGrid, arr)
+
+Takes a kGrid `kGrid` and arbitrary data `arr` over a reduced BZ and returns an array with data over
+full BZ. This is mainly used before convolutions, since they require data over the full BZ.
+"""
 expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+
+"""
+    expandKArr!(kG, [res,] arr)
+
+Inplace version of [`expandKArr`](@ref). The results are written to `res` if given as parameter.
+Otherwise the `expand_cache` field of `kG` is used.
+"""
+expandKArr!(kG::ReducedKGrid, res::AbstractArray, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+expandKArr!(kG::ReducedKGrid, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
 
 
 # ------------------------------ Convolution Functions -----------------------------
+"""
+    conv(kG::ReducedKGrid, arr1::AbstractVector{ComplexF64}, arr2::AbstractVector{ComplexF64})
 
+Computes the convolution of data over two arrays `arr1` and `arr2`, both given over the fully irreducible BZ.
+i.e. ``res[k] = \\sum_{q \\in \\text{BZ}} arr1[k] * arr2[k+q]``.
+`arr1` and `arr2` will be expanded to the full BZ internally, the result is given over the fully irreducible BZ.
+
+TODO: at the moment, this function does not use the internal expansion cache of `kG` and is therefore quite slow. 
+"""
 function conv(kG::ReducedKGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return arr1 .* arr2
     tmp = reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft 
     return reduceKArr(kG, ifft_post(kG, tmp)) ./ Nk(kG)
 end
 
+"""
+    conv!(kG::ReducedKGrid, res::AbstractVector{ComplexF64}, arr1::AbstractVector{ComplexF64}, arr2::AbstractVector{ComplexF64})
+
+Inplace version of [`conv`](@ref). The results are written to `res`.
+"""
 function conv!(kG::ReducedKGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     expandKArr!(kG, arr1)

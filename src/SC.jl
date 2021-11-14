@@ -11,16 +11,15 @@ See also [`FullKGrid_cP_3D`](@ref) and [`FullKGrid_cP_3D`](@ref)
 ```
 julia> gen_cP_kGrid(2, 2)
 """
-function gen_cP_kGrid(Nk::Int64, D::Int64, t::Float64)
+function gen_cP_kGrid(Nk::Int64, D::Int64, t::Float64, sampling::AbstractArray)
     if D == 2
-        return FullKGrid_cP(2, Nk, t)
+        return FullKGrid_cP(2, Nk, t, sampling)
     elseif D == 3
-        return FullKGrid_cP(3, Nk, t)
+        return FullKGrid_cP(3, Nk, t, sampling)
     else
         throw("Simple Cubic only implemented for 2D and 3D")
     end
 end
-
 
 # ================================================================================ #
 #                                Simple Cubic 2D                                    #
@@ -46,9 +45,8 @@ struct FullKGrid_cP{D} <: FullKGrid{cP, D}
     ϵkGrid::GridDisp
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
-    function FullKGrid_cP(D::Int, Nk::Int, t::Float64; fftw_plan=nothing)
-        kx = [(2*π/Nk) * j - π for j in 1:Nk]
-        kGrid  = collect(Base.product([kx for Di in 1:D]...))[:]
+    function FullKGrid_cP(D::Int, Nk::Int, t::Float64, sampling::AbstractArray; fftw_plan=nothing)
+        kGrid  = collect(Base.product([sampling for Di in 1:D]...))[:]
         fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{D}(Nk^D, Nk, kGrid, gen_ϵkGrid(cP,kGrid,t),t,fftw_plan)
     end
@@ -159,7 +157,6 @@ function expandKArr!(kG::ReducedKGrid_cP, res::AbstractArray{T,D}, arr::Array{T,
         end
     end
 end
-
 
 function reduceKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T,D}) where {T,D}
     res = similar(arr, length(kG.kInd))

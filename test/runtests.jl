@@ -2,7 +2,6 @@ using Test
 
 using Dispersions
 
-include("./testFunctions.jl")
 
 grid_list = ["2Dsc-1.3", "3Dsc-1.3", "p6m-1.1"]
 
