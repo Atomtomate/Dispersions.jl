@@ -1,8 +1,8 @@
 function Base.show(io::IOT, gr::KGrid{T, D}) where {IOT <: IO, T<:KGridType, D}
     if get(io, :compact, true)
-        print(io, "Reduced $T grid in $D dimensions with ", Nk(gr), " k-points.")
+        print(io, "$T(t=$(gr.t)) grid in $D dimensions with ", Nk(gr), " k-points.")
     else
-        print(io, "Reduced $T grid in $D dimensions with ", Nk(gr), " k-points.\n
+        print(io, "$T(t=$(gr.t)) grid in $D dimensions with ", Nk(gr), " k-points.\n
    === Public Fields ===
 Nk    : total number of points
 Ns    : number of points per dimension

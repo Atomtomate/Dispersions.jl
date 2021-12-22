@@ -5,6 +5,7 @@ using AbstractFFTs, FFTW
 using HDF5
 using LinearAlgebra
 using ShiftedArrays
+using FastGaussQuadrature
 
 # general types
 export KGrid, FullKGrid, ReducedKGrid

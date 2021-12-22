@@ -13,7 +13,7 @@ kintegrate(kG::Nothing, arr::AbstractArray) = arr
 
 function kintegrate(kG::T1, arr::AbstractArray, dim::Int, type::T2 = KSum()) where {T1 <: ReducedKGrid, T2 <: KSum}
     size(arr)[dim] != length(kG.kMult) && throw(ArgumentError("Dimension does not seem to be on a k grid! Length is $(size(arr)[dim]) but should be $(length(kG.kMult))."))
-    return mapslices(sub_arr -> dot(kG.kMult, sub_arr)/Nk(kG), arr, dims=dim)
+    return mapslices(sub_arr -> kintegrate(kG, sub_arr, type=type), arr, dims=dim)
 end
 
 function kintegrate(kG::T1, arr::AbstractArray{T2,1}; type::T3 = KSum()) where {T1 <: ReducedKGrid, T2 <: Number, T3 <: KSum}
