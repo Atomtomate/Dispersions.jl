@@ -2,7 +2,6 @@ module Dispersions
 
 using Combinatorics
 using AbstractFFTs, FFTW
-using HDF5
 using LinearAlgebra
 using ShiftedArrays
 using FastGaussQuadrature

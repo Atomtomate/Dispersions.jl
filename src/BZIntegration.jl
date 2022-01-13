@@ -7,6 +7,14 @@
 abstract type KSpaceIntegrator end
 
 struct KSum <: KSpaceIntegrator end
+struct GaussLegendre   <: KSpaceIntegrator 
+    pref::Float64
+    weights::AbstractArray{Float64, 1}
+    function GaussLegendre(N::Int)
+        n, w = gausslegendre(N);
+        new(π, w) # pre_factor = (b-a)/2 = 2π/2kintegrate
+    end
+end
 
 
 kintegrate(kG::Nothing, arr::AbstractArray) = arr
