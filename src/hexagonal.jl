@@ -48,7 +48,8 @@ this grid type and multiplicity of each stored point.
 
 Fields
 -------------
-- **`Nk`**    : `Int` k points in full grid.
+- **`Ns`**    : `Int` k points in each dimension.
+- **`Nk`**    : `Int` Total number of k points.
 - **`kInd`**  : `Array{Tuple{Int,...}}` indices in full grid. used for reconstruction of full grid.
 - **`kMult`** : `Array{Float64,1}` multiplicity of point, used for calculations involving reduced k grids.
 - **`kGrid`** : `Array{Tuple{Float64,...}}` k points of reduced grid.

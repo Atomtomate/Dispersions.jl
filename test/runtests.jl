@@ -12,6 +12,10 @@ include("./helper_functions.jl")
     #include("./IO_SC.jl")    
 end
 
+@testset "FCC" begin
+    include("./FCC.jl")
+end
+
 @testset "hexagonal" begin
     include("./hexagonal.jl")
 end
