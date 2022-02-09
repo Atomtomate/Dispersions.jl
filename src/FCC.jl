@@ -5,7 +5,7 @@
     gen_cF_kGrid(Nk::Int64, t::Float64, sampling::AbstractArray)
 
 Generates a face centered cubic lattice of type k-grid
-See also [`FullKGrid_cF_3D`](@ref)
+See also [`FullKGrid_cF`](@ref)
 # Examples
 ```
 julia> gen_cF_kGrid(2, 2)
@@ -39,8 +39,14 @@ struct FullKGrid_cF <: FullKGrid{cF, 3}
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
     function FullKGrid_cF(Nk::Int, t::Float64, sampling::AbstractArray; fftw_plan=nothing)
-        kGrid  = collect(Base.product([sampling for Di in 1:3]...))[:]
-        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], 3)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        fccBasisTransform::Matrix{Float64} = [-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0]
+		kGrid  =  collect(map( x -> Tuple(fccBasisTransform *  collect(x)), Base.product([sampling for Di in 1:3]...)))[:]
+		fftw_plan = if fftw_plan === nothing
+			plan_fft!(randn(Complex{Float64}, repeat([Nk], 3)...), flags=FFTW.ESTIMATE, timelimit=Inf)
+		else
+			fftw_plan
+		end
+        #fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], 3)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new(Nk^3, Nk, kGrid, gen_ϵkGrid(cF,kGrid,t),t,fftw_plan)
     end
 end
@@ -98,16 +104,10 @@ function reduceKGrid(kG::FullKGrid{cF,3})
     kGrid = reshape(kG.kGrid, gridshape(kG))
     ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
     ind = collect(Base.product([1:kG.Ns for Di in 1:3]...))
-	D = 3
-    ll = floor(Int,size(kGrid,1)/2 + 1) - 1
+    ll = floor(Int,kG.Ns/2) 
     la = ceil(Int,kG.Ns/2)
-    index = if D == 2
-        [[x,y]  for x=la:ll+la for y=la:x]
-    elseif D == 3
-        [[x,y,z] for x=la:ll+la for y=la:x for z = la:y]
-    else
-        error("D ∉ [2,3] not implemented yet!")
-    end
+	#TODO: Find correct indices
+    index = [[x,y,z] for x=la:ll+la for y=la:x for z = la:y]
 
     ind_red = GridInd{3}(undef, length(index))
     grid_red = GridPoints{3}(undef, length(index))
@@ -120,11 +120,10 @@ function reduceKGrid(kG::FullKGrid{cF,3})
         ϵk_red[i] = ϵkGrid[ti...]
     end
 
-    kMult, expand_perms = build_expand_mapping_SC(D, kG.Ns, ind_red)
+    kMult, expand_perms = build_expand_mapping_SC(3, kG.Ns, ind_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
-    return ReducedKGrid_cF(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red,
-                              expand_perms, expand_cache, kG.fftw_plan)
+    return ReducedKGrid_cF(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red, expand_perms, expand_cache, kG.fftw_plan)
 end
 
 """
@@ -168,10 +167,10 @@ function reduceKArr!(kG::ReducedKGrid_cF, res::AbstractArray{T,1}, arr::Abstract
     end
 end
 
-#TODO: implement
-gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
+gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
 ifft_post(kG::ReducedKGrid_cF, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 
+#TODO: implement
 function build_expand_mapping_cF(D::Int, Ns::Int, ind_red::Array)
     expand_perms = Vector{Vector{CartesianIndex{3}}}(undef, length(ind_red))
     kMult = Array{Int,1}(undef, length(ind_red))
