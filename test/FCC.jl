@@ -19,7 +19,7 @@ end
 
 @testset "reduce_expand" begin
     for NN in 1:16
-        gr3 = Dispersions.gen_kGrid("3Dsc-1.3",NN, full=true)
+        gr3 = Dispersions.gen_kGrid("fcc-1.3",NN, full=true)
         gr3_r = Dispersions.reduceKGrid(gr3)
         ek3 = reshape(gr3.ϵkGrid, (NN,NN,NN))
         res_r3 = zeros(eltype(gr3.ϵkGrid), size(gr3_r.ϵkGrid)...) 
