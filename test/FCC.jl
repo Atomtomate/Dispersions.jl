@@ -4,7 +4,7 @@ using Base.Iterators
     r8 = gen_kGrid("fcc-1.2",2)
     r64 = gen_kGrid("fcc-1.1",4)
     indTest = reduceKArr(r8, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
-    gridTest = reduceKArr(r8, reshape([(0, 0, 0) (π, 0, 0) (0, π, 0) (π, π, 0) (0, 0, π) (π, 0, π) (0, π, π) (π, π, π)], (2,2,2)))
+    gridTest = reduceKArr(r8, reshape([(0, 0, 0) (-π, π, π) (π, -π, π) (0, 0, 2π) (π, π, -π) (0, 2π, 0) (2π, 0, 0) (π, π, π)], (2,2,2)))
     @test Nk(r8) == 2^3
     @test Nk(r64) == 4^3
     @test all(dispersion(r8) .≈ r8.ϵkGrid)

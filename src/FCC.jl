@@ -42,7 +42,7 @@ struct FullKGrid_cF <: FullKGrid{cF, 3}
         fccBasisTransform::Matrix{Float64} = [-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0]
 		kGrid  =  collect(map( x -> Tuple(fccBasisTransform *  collect(x)), Base.product([sampling for Di in 1:3]...)))[:]
 		fftw_plan = if fftw_plan === nothing
-			plan_fft!(randn(Complex{Float64}, repeat([Nk], 3)...), flags=FFTW.ESTIMATE, timelimit=Inf)
+			plan_fft!(Array{ComplexF64,3}(undef, repeat([Nk], 3)...), flags=FFTW.ESTIMATE, timelimit=Inf)
 		else
 			fftw_plan
 		end
@@ -101,13 +101,24 @@ for any (x_1, x_2, ...) the condition x_1 >= x_2 >= x_3 ...
 is fulfilled.
 """
 function reduceKGrid(kG::FullKGrid{cF,3})
+    #=
     kGrid = reshape(kG.kGrid, gridshape(kG))
     ϵkGrid = reshape(kG.ϵkGrid, gridshape(kG))
+    =#
     ind = collect(Base.product([1:kG.Ns for Di in 1:3]...))
+    #=
     ll = floor(Int,kG.Ns/2) 
     la = ceil(Int,kG.Ns/2)
+	kGrid_temp = kGrid
 	#TODO: Find correct indices
     index = [[x,y,z] for x=la:ll+la for y=la:x for z = la:y]
+	delEl = 0
+	for (i,k) in enumerate(kGrid)
+		if (k[1]<0 || k[2]<0 || k[3]<0 || k[1]<k[2] || k[1]<k[3] || k[2]<k[3])
+			#deleteat!(kGrid_temp,i-delEl)
+			delEl += 1
+		end
+	end
 
     ind_red = GridInd{3}(undef, length(index))
     grid_red = GridPoints{3}(undef, length(index))
@@ -120,10 +131,11 @@ function reduceKGrid(kG::FullKGrid{cF,3})
         ϵk_red[i] = ϵkGrid[ti...]
     end
 
-    kMult, expand_perms = build_expand_mapping_SC(3, kG.Ns, ind_red)
+    kMult, expand_perms = build_expand_mapping_cF(3, kG.Ns, ind_red)
+    =#
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
 
-    return ReducedKGrid_cF(kG.Nk, kG.Ns, kG.t, ind_red, kMult, grid_red, ϵk_red, expand_perms, expand_cache, kG.fftw_plan)
+    return ReducedKGrid_cF(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:], map(x -> [CartesianIndex{3}(x)],ind[:]), expand_cache, kG.fftw_plan)
 end
 
 """
