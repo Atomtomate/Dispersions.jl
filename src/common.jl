@@ -63,14 +63,26 @@ export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, 
 Takes a kGrid `kGrid` and arbitrary data `arr` over a full BZ and returns an array with data over fully irreducible
 BZ. This is mainly used after convolutions, since they require data over the full BZ.
 """
-reduceKArr(kG::ReducedKGrid, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+function reduceKArr(kG::ReducedKGrid{gT,D}, arr::AbstractArray{T,D}) where {gT,T,D}
+    res = similar(arr, length(kG.kInd))
+    reduceKArr!(kG, res, arr)
+    return res
+end
+
 
 """
     reduceKArr!(kGrid::ReducedKGrid, res, arr)
 
 Inplace version of [`reduceKArr`](@ref). The results are written to `res`.
 """
-reduceKArr(kG::ReducedKGrid, res::AbstractArray, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+function reduceKArr!(kG::ReducedKGrid{gT,D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {gT,T,D}
+    for (i,ki) in enumerate(kG.kInd)
+        @inbounds res[i] = arr[ki...]
+    end
+end
+
+
+#TODO: assumed fields: kInd, expand_erms, expand_cache
 
 """
     expandKArr(kGrid::ReducedKGrid, arr)
@@ -78,16 +90,38 @@ reduceKArr(kG::ReducedKGrid, res::AbstractArray, arr::AbstractArray) = throw(Arg
 Takes a kGrid `kGrid` and arbitrary data `arr` over a reduced BZ and returns an array with data over
 full BZ. This is mainly used before convolutions, since they require data over the full BZ.
 """
-expandKArr(kG, arr) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+function expandKArr(kG::ReducedKGrid{gT,D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {gT,T,D}
+    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
+    res = similar(arr, gridshape(kG)...)
+    expandKArr!(kG, res, arr)
+    return res
+end
+
+"""
+    expandKArr!(kG, arr)
+
+Inplace version of [`expandKArr`](@ref). The results are written to `kG.expand_cache`.
+"""
+function expandKArr!(kG::ReducedKGrid, arr::Array{Complex{Float64}, 1})
+    for (ri,perms) in enumerate(kG.expand_perms)
+        @simd for p in perms
+            @inbounds kG.expand_cache[p] = arr[ri]
+        end
+    end
+end
 
 """
     expandKArr!(kG, [res,] arr)
 
-Inplace version of [`expandKArr`](@ref). The results are written to `res` if given as parameter.
-Otherwise the `expand_cache` field of `kG` is used.
+Inplace version of [`expandKArr`](@ref). The results are written to `res`.
 """
-expandKArr!(kG::ReducedKGrid, res::AbstractArray, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
-expandKArr!(kG::ReducedKGrid, arr::AbstractArray) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found")) 
+function expandKArr!(kG::ReducedKGrid{gT,D}, res::AbstractArray{T,D}, arr::Array{T, 1}) where {gT,T,D}
+    for (ri,perms) in enumerate(kG.expand_perms)
+        @simd for p in perms
+            @inbounds res[p] = arr[ri]
+        end
+    end
+end
 
 
 # ------------------------------ Convolution Functions -----------------------------

@@ -138,47 +138,6 @@ function reduceKGrid(kG::FullKGrid{cF,3})
     return ReducedKGrid_cF(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:], map(x -> [CartesianIndex{3}(x)],ind[:]), expand_cache, kG.fftw_plan)
 end
 
-"""
-    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1})
-
-Expands array of values on reduced k grid back to full BZ.
-"""
-#TODO: refactor, these functions are defined almost equivalently in SC,hex
-function expandKArr(kG::ReducedKGrid_cF, arr::AbstractArray{T, 1})::AbstractArray{T, 3} where {T}
-    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    res = similar(arr, gridshape(kG)...)
-    expandKArr!(kG, res, arr)
-    return res
-end
-
-function expandKArr!(kG::ReducedKGrid_cF, arr::Array{Complex{Float64}, 1})
-    for (ri,perms) in enumerate(kG.expand_perms)
-        @simd for p in perms
-            @inbounds kG.expand_cache[p] = arr[ri]
-        end
-    end
-end
-
-function expandKArr!(kG::ReducedKGrid_cF, res::AbstractArray{T,3}, arr::Array{T, 1}) where {T}
-    for (ri,perms) in enumerate(kG.expand_perms)
-        @simd for p in perms
-            @inbounds res[p] = arr[ri]
-        end
-    end
-end
-
-function reduceKArr(kG::ReducedKGrid_cF, arr::AbstractArray{T,3}) where {T}
-    res = similar(arr, length(kG.kInd))
-    reduceKArr!(kG, res, arr)
-    return res
-end
-
-function reduceKArr!(kG::ReducedKGrid_cF, res::AbstractArray{T,1}, arr::AbstractArray{T,3}) where {T}
-    for (i,ki) in enumerate(kG.kInd)
-        @inbounds res[i] = arr[ki...]
-    end
-end
-
 gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
 ifft_post(kG::ReducedKGrid_cF, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 

@@ -129,47 +129,6 @@ function reduceKGrid(kG::FullKGrid{cP,D}) where D
                               expand_perms, expand_cache, kG.fftw_plan)
 end
 
-"""
-    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1})
-
-Expands array of values on reduced k grid back to full BZ.
-"""
-
-function expandKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {T,D}
-    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    res = similar(arr, gridshape(kG)...)
-    expandKArr!(kG, res, arr)
-    return res
-end
-
-function expandKArr!(kG::ReducedKGrid_cP, arr::Array{Complex{Float64}, 1})
-    for (ri,perms) in enumerate(kG.expand_perms)
-        @simd for p in perms
-            @inbounds kG.expand_cache[p] = arr[ri]
-        end
-    end
-end
-
-function expandKArr!(kG::ReducedKGrid_cP, res::AbstractArray{T,D}, arr::Array{T, 1}) where {T,D}
-    for (ri,perms) in enumerate(kG.expand_perms)
-        @simd for p in perms
-            @inbounds res[p] = arr[ri]
-        end
-    end
-end
-
-function reduceKArr(kG::ReducedKGrid_cP{D}, arr::AbstractArray{T,D}) where {T,D}
-    res = similar(arr, length(kG.kInd))
-    reduceKArr!(kG, res, arr)
-    return res
-end
-
-function reduceKArr!(kG::ReducedKGrid_cP{D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {T,D}
-    for (i,ki) in enumerate(kG.kInd)
-        @inbounds res[i] = arr[ki...]
-    end
-end
-
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 ifft_post(kG::ReducedKGrid_cP, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 

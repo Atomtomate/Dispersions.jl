@@ -12,7 +12,7 @@ struct GaussLegendre   <: KSpaceIntegrator
     weights::AbstractArray{Float64, 1}
     function GaussLegendre(N::Int)
         n, w = gausslegendre(N);
-        new(π, w) # pre_factor = (b-a)/2 = 2π/2kintegrate
+        new(π, w) # pre_factor = (b-a)/2 = 2π/2Nk
     end
 end
 

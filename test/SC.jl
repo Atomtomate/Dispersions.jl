@@ -36,6 +36,7 @@ end
 
 @testset "reduce_expand" begin
     for NN in 1:16
+        gl_gr, gl_w  = Dispersions.gausslegendre(NN);
         gr2 = Dispersions.gen_kGrid("2Dsc-1.3",NN, full=true)
         gr3 = Dispersions.gen_kGrid("3Dsc-1.3",NN, full=true)
         gr2_r = Dispersions.reduceKGrid(gr2)

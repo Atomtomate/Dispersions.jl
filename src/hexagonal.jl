@@ -62,6 +62,7 @@ struct ReducedKGrid_p6m  <: ReducedKGrid{p6m, 2}
     kMult::Array{Float64,1}
     kGrid::GridPoints{2}
     ϵkGrid::GridDisp
+    expand_perms::Vector{Vector{CartesianIndex{2}}}
     expand_cache::Array{Complex{Float64},2}
     fftw_plan::FFTW.cFFTWPlan
 end
@@ -105,58 +106,7 @@ function reduceKGrid(kG::FullKGrid{p6m})
     #return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind_red, kmult, grid_red, ϵk_red)
     expand_cache = Array{Complex{Float64}}(undef, gridshape(kG))
     return ReducedKGrid_p6m(kG.Nk, kG.Ns, kG.t, ind[:], ones(length(ind)), kG.kGrid[:], kG.ϵkGrid[:],
-                            expand_cache, kG.fftw_plan)
-end
-
-function expandKArr!(kG::ReducedKGrid{p6m}, arr::Array{T, 1}) where T
-    v = reshape(arr,gridshape(kG))
-    @simd for i in eachindex(arr)
-        @inbounds kG.expand_cache[i] = v[i]
-    end
-end
-
-"""
-    expandKArr(kG::ReducedKGrid{T1}, arr::Array{T2,1}) where {T1 <: Union{cP_2D,cP_3D}, T2 <: Any
-
-Expands array of values on reduced k grid back to full BZ.
-"""
-function expandKArr(kG::ReducedKGrid_p6m, arr::Array{T, 1}) where T
-    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
-    #gs  = gridshape(kG)
-    #nh  = floor(Int,gridshape(kG)[2]/2) + 1
-    #res = Array{T,2}(undef, gs...)
-    #res[:, nh:end] = reshape(arr, gs[1], nh-iseven(gs[2]))
-    #res[:, 1:(nh-iseven(gs[2]))] = reverse(res[:, nh:end])
-    #$return res
-    return reshape(arr, gridshape(kG))
-end
-
-function reduceKArr(kG::ReducedKGrid_p6m, arr::AbstractArray)
-    #nh  = floor(Int,gridshape(kG)[2]/2) + 1
-    #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
-    return arr[:]
-end
-
-function reduceKArr!(kG::ReducedKGrid_p6m, res::AbstractArray, arr::AbstractArray)
-    #nh  = floor(Int,gridshape(kG)[2]/2) + 1
-    #return (reshape(arr, gridshape(kG))[:,nh:end])[:]
-    @simd for i in 1:length(res)
-        @inbounds res[i] = arr[i]
-    end
-end
-
-
-"""
-	kGrid_multiplicity_p6m(kIndices)
-
-Given a set of reduced indices, produce list of multiplicities for each point
-"""
-function kGrid_multiplicity(::Type{p6m}, kIndices)
-    #res = 2.0*ones(Float64, length(kIndices))
-    #li = trunc(Int, sqrt(length(kIndices)))
-    #isodd(length(kIndices)) && (res[1:li] .= 1.0)
-    #return res
-    return ones(length(kIndices))
+                            map(x -> [CartesianIndex{2}(x)],ind[:]),expand_cache, kG.fftw_plan)
 end
 
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
