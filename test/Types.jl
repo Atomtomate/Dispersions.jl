@@ -3,4 +3,4 @@ struct DummyKGrid end
 dG = DummyKGrid()
 
 @test_throws MethodError Dispersions.KGrid(dG)
-@test_throws ArgumentError gridshape(dG)
+@test_throws MethodError gridshape(dG)

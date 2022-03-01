@@ -92,3 +92,8 @@ end
 #     end
 #     return res ./ Nk(kG)
 # end
+function conv_old(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
+    Nk(kG) == 1 && return arr1 .* arr2
+    tmp = fft(reshape(arr1, gridshape(kG))) .* fft(reshape(arr2, gridshape(kG))) |> ifft
+    return ifft_post(kG, tmp) ./ Nk(kG)
+end

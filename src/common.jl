@@ -23,8 +23,6 @@ end
 # ================================================================================ #
 export conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
-#TODO: assumed fields: kInd, expand_erms, expand_cache, ϵkGrid, Nk, kGrid
-
 # ------------------------------ Helper Functions -----------------------------
 
 """
@@ -32,20 +30,19 @@ export conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
 shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
 """
-gridshape(kG) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found"))
+gridshape(kG::KGrid{T,D}) where {T,D} = ntuple(_ -> kG.Ns, D)
 
 """
     Nk(kG::T) where T <: KGrid
 
-Total number of k points (length of `kGrid.kGrid` for full grids). 
+Total number of k points.
 """
 Nk(kG) = kG.Nk
 
 """
     gridPoints(kG::T)::Int where T <: KGrid
 
-Number of grid points as integer value. `Nk` needs to be accessible for all implemented 
-full and reduced k grids.
+k vectors of grid.
 """
 gridPoints(kG::T) where T <: KGrid = kG.kGrid
 
@@ -68,8 +65,8 @@ TODO: at the moment, this function does not use the internal expansion cache of 
 """
 function conv(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return arr1 .* arr2
-    tmp = reshape(fft(expandKArr(kG, arr1)) .* fft(expandKArr(kG, arr2)), gridshape(kG)) |> ifft 
-    return reduceKArr(kG, ifft_post(kG, tmp)) ./ Nk(kG)
+    tmp = fft(reshape(arr1, gridshape(kG))) .* fft(reshape(arr2, gridshape(kG))) |> ifft 
+    return ifft_post(kG, tmp) ./ Nk(kG)
 end
 
 """
@@ -79,14 +76,11 @@ Inplace version of [`conv`](@ref). The results are written to `res`.
 """
 function conv!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    expandKArr!(kG, arr1)
-    tmp = fft(kG.expand_cache)
-    expandKArr!(kG, arr2)
-    fft!(kG.expand_cache)
-    kG.expand_cache[:] = kG.expand_cache .* tmp
-    AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
-    res[:] = res ./ Nk(kG)
+    AbstractFFTs.mul!(res, kG.fftw_plan, arr1)
+    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, arr2)
+    @inbounds kG.fft_cache[:] = res .* kG.fft_cache
+    AbstractFFTs.ldiv!(res, kG.fftw_plan, kG.fft_cache)
+    res[:] /= Nk(kG)
 end
 
 
@@ -99,13 +93,11 @@ end
 
 function conv_fft1!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    expandKArr!(kG, arr1)
     AbstractFFTs.mul!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
     @simd for i in 1:length(kG.expand_cache)
         @inbounds kG.expand_cache[i] *= arr2[i] 
     end
     AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
     @simd for i in 1:length(res)
         @inbounds res[i] /= kG.Nk
     end
@@ -113,19 +105,18 @@ end
 
 function conv_fft(kG::KGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return arr1 .* arr2
-    reduceKArr(kG, ifft_post(kG, ifft(arr1 .* arr2))) ./ Nk(kG)
+    ifft_post(kG, ifft(arr1 .* arr2)) ./ Nk(kG)
 end
 
 function conv_fft!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-
-    @simd for i in eachindex(kG.expand_cache)
-        @inbounds kG.expand_cache[i] = arr1[i] .* arr2[i]
+    
+    @simd for i in eachindex(kG.fft_cache)
+        @inbounds res[i] = arr1[i] .* arr2[i]
     end
-    kG.expand_cache[:] = arr1 .* arr2
-    AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    reduceKArr!(kG, res, ifft_post(kG, kG.expand_cache)) 
-    @simd for i in 1:length(res)
+    AbstractFFTs.ldiv!(kG.fft_cache, kG.fftw_plan, res)
+    ifft_post!(kG, res, kG.fft_cache) ./ Nk(kG)
+    @simd for i in eachindex(res)
         @inbounds res[i] /= kG.Nk
     end
 end
