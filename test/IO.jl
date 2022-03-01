@@ -1,1 +1,11 @@
-include("./IO_SC.jl")
+@testset "type pretty prints" begin
+    io = IOBuffer();
+    grid = gen_kGrid("2Dsc-1.0",2)
+    print(io, grid)
+    @test String(take!(io)) == "Index[(1, 1):(4, 4)]: length:16"
+    gp = gridPoints(grid)
+    print(io, gp)
+    @test String(take!(io)) == "GridPoints[(-1.5707963267948966, -1.5707963267948966):(3.141592653589793, 3.141592653589793)]: length:16"
+    print(io, grid)
+    @test String(take!(io)) == "FullKGrid_SC[4] for 2D"
+end
