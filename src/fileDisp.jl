@@ -72,6 +72,11 @@ to the identity operation.
 """
 function reduceKGrid(kG::FullKGrid{FileDisp})
     kmult = ones(kG.Nk)
+    D = 3 # TODO input
+    symm_map(x) = [Tuple(z[1] .* z[2]) for z in Base.product(permutations(x),unique(hcat([collect(permutations([((j <= i) ? 1 : -1) for j in 1:D])) for i in 0:D]...)))][:]
+    parents, ops = find_classes(f, ind[:], UInt32.(repeat([1],length(symm_map(ones(D))))));
+    kmap, k_min = minimal_set(parents, ind[:]);
+
     return ReducedKGrid_File(kG.Nk, kmult, kG.kGrid, kG.ϵkGrid, kG.shape)
 end
 

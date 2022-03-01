@@ -3,7 +3,8 @@ include("helper_functions.jl")
 # TODO error test for interface functions
 # TODO: this needs loads of tests for different lattices
 @testset "convolutions" begin
-    for kG in map(x-> gen_kGrid(x,4), ["2Dsc-1.4", "3Dsc-1.4", "p6m-1.4"])
+    for NN in [4,6]
+    for kG in map(x-> gen_kGrid(x,NN), ["2Dsc-1.4", "3Dsc-1.4", "p6m-1.4", "fcc-1.4"])
         fek = convert.(ComplexF64,expandKArr(kG, kG.ϵkGrid))
         rek = convert.(ComplexF64,deepcopy(kG.ϵkGrid))
         t1 = zeros(ComplexF64,length(kG.ϵkGrid))
@@ -29,5 +30,6 @@ include("helper_functions.jl")
         conv_fft!(kG, t2, fft_rek, fft_rek)
         @test all(r1 .≈ r2)
         @test all(r2 .≈ t2)
+    end
     end
 end

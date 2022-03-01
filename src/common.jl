@@ -23,6 +23,10 @@ end
 # ================================================================================ #
 #                                   Interface                                      #
 # ================================================================================ #
+export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
+
+
+#TODO: assumed fields: kInd, expand_erms, expand_cache, ϵkGrid, Nk, kGrid
 
 # ------------------------------ Helper Functions -----------------------------
 
@@ -55,8 +59,6 @@ Returns dispersion relation of grid.
 """
 dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
-# ------------------------------ Helper Functions -----------------------------
-export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 """
     reduceKArr(kGrid::ReducedKGrid, arr)
 
@@ -80,9 +82,6 @@ function reduceKArr!(kG::ReducedKGrid{gT,D}, res::AbstractArray{T,1}, arr::Abstr
         @inbounds res[i] = arr[ki...]
     end
 end
-
-
-#TODO: assumed fields: kInd, expand_erms, expand_cache
 
 """
     expandKArr(kGrid::ReducedKGrid, arr)

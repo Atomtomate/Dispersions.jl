@@ -64,12 +64,26 @@ function naive_bubble(fk::FullKGrid{T}) where T
     return res
 end
 
+function naive_conv(kG1::ReducedKGrid, kG2::ReducedKGrid, arr1::AbstractArray, arr2::AbstractArray)
+    Nk(kG1) == 1 && return arr1 .* arr2
+    a1 = expandKArr(kG1, arr1)
+    a2 = expandKArr(kG2, arr2)
+    res = zeros(eltype(arr1), size(a1))
+    for i in CartesianIndices(a1)
+        for j in CartesianIndices(a2)
+            ii = mod1.(Tuple(j) .- Tuple(i) .- Tuple(ones(Int,length(i))), size(a1))
+            println("res[$(i.I)] += a1[$(j.I)] * a2[$(ii)] = $(round.(a1[i]*a2[ii...],digits=3))")
+            res[i] += a1[i]*a2[ii...]
+        end
+    end
+    return res ./ Nk(kG1)
+end
+
 function naive_conv(kG::ReducedKGrid, arr1::AbstractArray, arr2::AbstractArray)
     Nk(kG) == 1 && return arr1 .* arr2
     a1 = expandKArr(kG, arr1)
     a2 = expandKArr(kG, arr2)
     res = zeros(eltype(arr1), size(a1))
-    mi = size(a2)
     for j in CartesianIndices(a2)
         for i in CartesianIndices(a1)
             ii = mod1.(Tuple(j) .+ Tuple(i) .- Tuple(ones(Int,length(i))), size(a1))
