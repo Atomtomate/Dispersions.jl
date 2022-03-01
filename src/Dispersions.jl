@@ -27,6 +27,7 @@ export kintegrate
 include("Types.jl")
 include("KGrid.jl")
 include("common.jl")
+include("IO.jl")
 # include("SC.jl")
 # include("FCC.jl")
 # include("hexagonal.jl")

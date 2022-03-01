@@ -16,7 +16,6 @@ struct GaussLegendre   <: KSpaceIntegrator
     end
 end
 
-
 kintegrate(kG::Nothing, arr::AbstractArray) = arr
 
 function kintegrate(kG::T1, arr::AbstractArray, dim::Int, type::T2 = KSum()) where {T1 <: KGrid, T2 <: KSum}

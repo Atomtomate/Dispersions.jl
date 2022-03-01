@@ -1,4 +1,5 @@
 function gen_kGrid(kg::String, Nk::Int)
+    #TODO: check for reasonable input
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
@@ -6,9 +7,9 @@ function gen_kGrid(kg::String, Nk::Int)
     elseif lowercase(data[1]) == "2dsc"
         KGrid(SC, 2, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "fcc"
-        KGrid_cF(Nk, parse(Float64, data[2]))
+        KGrid(FCC, 3, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "p6m"
-        KGrid_p6m(Nk, parse(Float64, data[2]))
+        KGrid_p6m(p6m, 2, Nk, parse(Float64, data[2]))
     else
         throw(ArgumentError("Unkown grid type"))
     end
