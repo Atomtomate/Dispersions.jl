@@ -23,6 +23,7 @@ end
 #                                     Types                                        #
 # -------------------------------------------------------------------------------- #
 
+#TODO: no need for lattice types, when general basis is implemented
 abstract type SC <: KGridType end
 abstract type FCC <: KGridType end
 
@@ -48,7 +49,7 @@ struct KGrid{T <: KGridType, D}
     fftw_plan::FFTW.cFFTWPlan
     function KGrid(GT::Type{T}, D::Int, Nk::Int, t::Float64; fftw_plan=nothing) where T<:KGridType
         sampling=[(2*π/Nk) * j - π for j in 1:Nk]
-        kGrid  = collect(Base.product([sampling for Di in 1:D]...))[:]
+        kGrid  = basis_transform(GT, collect(Base.product([sampling for Di in 1:D]...)))[:]
         #TODO: = gen_kGridVecs
         #TODO: remove plan?
         fftw_plan = fftw_plan === nothing ? plan_fft(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
@@ -59,12 +60,13 @@ end
 # -------------------------------------------------------------------------------- #
 #                                   Interface                                      #
 # -------------------------------------------------------------------------------- #
+#TODO: this can be generalized for arbitrary basis vectors
 gen_ϵkGrid(::Type{SC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{FCC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
 
-gen_kGridVecs(::Type{SC}) = throw("Not implemented yet")
-gen_kGridVecs(::Type{FCC}) = throw("Not implemented yet")
+basis_transform(::Type{SC}, kGrid::AbstractArray) = kGrid
+basis_transform(::Type{FCC}, kGrid::AbstractArray) = map(kᵢ -> Tuple([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)), kGrid)
 
-#TODO: match type of kGRid from KGrid{T}
+#TODO: is this the same for all k grids?
 ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 ifft_post!(kG::KGrid, res::AbstractArray{T,D}, x::AbstractArray{T,D}) where {D, T <: Number} = ShiftedArrays.circshift!(res, x, floor.(Int, gridshape(kG) ./ 2) .+ 1)

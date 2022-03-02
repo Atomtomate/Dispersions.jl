@@ -15,23 +15,24 @@ end
 # TODO error test for interface functions
 # TODO: this needs loads of tests for different lattices
 @testset "convolutions" begin
-    for NN in [3]
+    for NN in [3,4,5]
     for kG in map(x-> gen_kGrid(x,NN), grid_list)
+        rek = convert.(ComplexF64,deepcopy(kG.ϵkGrid))
+        rek_2 = deepcopy(rek)
+        fft_rek = fft(reshape(rek,gridshape(kG)))[:]
         ifft_post_arr = randn(gridshape(kG))
         ifft_post_res1 = Dispersions.ifft_post(kG, ifft_post_arr)
         ifft_post_res2 = similar(ifft_post_arr)
         Dispersions.ifft_post!(kG, ifft_post_res2, ifft_post_arr)
         @test all(ifft_post_res1 .≈ ifft_post_res2)
-
-        rek = convert.(ComplexF64,deepcopy(kG.ϵkGrid))
-        fft_rek = fft(reshape(rek,gridshape(kG)))[:]
         t1 = zeros(ComplexF64,length(kG.ϵkGrid))
-        t2 = zeros(ComplexF64,length(kG.ϵkGrid))
-        rek_2 = deepcopy(rek)
-        #TODO: naive conv
+        t3 = naive_conv(kG, rek, rek_2)[:]
         r1 = conv(kG, rek, rek_2)
+        t2 = conv_old(kG, rek, rek_2)
         conv!(kG, t1, rek, rek_2)
         @test all(r1 .≈ t1)
+        @test all(r1 .≈ t2)
+        @test abs(sum(r1 .- t3)) < 10e-8
         r2 = conv_fft1(kG, rek, fft_rek)
         conv_fft1!(kG, t2, rek, fft_rek)
         @test all(r1 .≈ r2)

@@ -33,5 +33,5 @@ include("BZIntegration.jl")
 
 end
 
-#TODO:iplement input fro mfile
+#TODO: implement input from basis vector
 #TODO: implement https://arxiv.org/pdf/2104.05856.pdf
