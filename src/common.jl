@@ -65,8 +65,9 @@ TODO: at the moment, this function does not use the internal expansion cache of 
 """
 function conv(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return arr1 .* arr2
-    tmp = fft(reshape(arr1, gridshape(kG))) .* fft(reshape(arr2, gridshape(kG))) |> ifft 
-    return ifft_post(kG, tmp) ./ Nk(kG)
+    res = similar(arr1)
+    conv!(kG, res, arr1, arr2)
+    return res
 end
 
 """
@@ -76,47 +77,47 @@ Inplace version of [`conv`](@ref). The results are written to `res`.
 """
 function conv!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    AbstractFFTs.mul!(res, kG.fftw_plan, arr1)
-    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, arr2)
-    @inbounds kG.fft_cache[:] = res .* kG.fft_cache
-    AbstractFFTs.ldiv!(res, kG.fftw_plan, kG.fft_cache)
-    res[:] /= Nk(kG)
+    gs = gridshape(kG)
+    res_v = reshape(view(res,:),gs)
+    AbstractFFTs.mul!(res_v, kG.fftw_plan, reshape(view(arr1,:),gs))
+    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, reshape(view(arr2,:),gs))
+    @inbounds res_v = res_v .* kG.fft_cache
+    AbstractFFTs.ldiv!(kG.fft_cache, kG.fftw_plan, res_v)
+    ifft_post!(kG, res_v, kG.fft_cache)
+    res[:] = res_v[:] ./ Nk(kG)
 end
 
 
-function conv_fft1(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64})
+function conv_fft1(kG::KGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return arr1 .* arr2
-    newArr = Array{eltype(arr1),1}(undef, length(kG.kInd))
-    conv_fft1!(kG, newArr, arr1, reshape(arr2, gridshape(kG)))
-    return newArr
+    res = Array{eltype(arr1),1}(undef, length(arr1))
+    conv_fft1!(kG, res, arr1, arr2)
+    return res
 end
 
 function conv_fft1!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    AbstractFFTs.mul!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    @simd for i in 1:length(kG.expand_cache)
-        @inbounds kG.expand_cache[i] *= arr2[i] 
-    end
-    AbstractFFTs.ldiv!(kG.expand_cache, kG.fftw_plan, kG.expand_cache)
-    @simd for i in 1:length(res)
-        @inbounds res[i] /= kG.Nk
-    end
+    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, reshape(view(arr1,:),gridshape(kG)))
+    conv_fft!(kG, view(res,:), view(kG.fft_cache,:), view(arr2,:))
 end
 
 function conv_fft(kG::KGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return arr1 .* arr2
-    ifft_post(kG, ifft(arr1 .* arr2)) ./ Nk(kG)
+    res = similar(arr1)
+    conv_fft!(kG, view(res,:), view(arr1,:), view(arr2,:))
+    return res
 end
 
 function conv_fft!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    
+    res_v = reshape(view(res,:),gridshape(kG))
     @simd for i in eachindex(kG.fft_cache)
         @inbounds res[i] = arr1[i] .* arr2[i]
     end
-    AbstractFFTs.ldiv!(kG.fft_cache, kG.fftw_plan, res)
-    ifft_post!(kG, res, kG.fft_cache) ./ Nk(kG)
-    @simd for i in eachindex(res)
-        @inbounds res[i] /= kG.Nk
-    end
+    AbstractFFTs.ldiv!(kG.fft_cache, kG.fftw_plan, res_v)
+    ifft_post!(kG, res_v, kG.fft_cache)
+    res[:] = res_v[:] ./ Nk(kG)
+    # @simd for i in eachindex(res_v)
+    #     @inbounds res_v[i] /= kG.Nk
+    # end
 end

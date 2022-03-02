@@ -51,7 +51,7 @@ struct KGrid{T <: KGridType, D}
         kGrid  = collect(Base.product([sampling for Di in 1:D]...))[:]
         #TODO: = gen_kGridVecs
         #TODO: remove plan?
-        fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        fftw_plan = fftw_plan === nothing ? plan_fft(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Nk^D, Nk, kGrid, gen_ϵkGrid(SC,kGrid,t),t,Array{ComplexF64,D}(undef,repeat([Nk],D)...),fftw_plan)
     end
 end
@@ -67,4 +67,4 @@ gen_kGridVecs(::Type{FCC}) = throw("Not implemented yet")
 
 #TODO: match type of kGRid from KGrid{T}
 ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
-ifft_post!(kG::KGrid, res::Array{T,D}, x::Array{T,D}) where {D, T <: Number} = ShiftedArrays.circshift!(res, x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
+ifft_post!(kG::KGrid, res::AbstractArray{T,D}, x::AbstractArray{T,D}) where {D, T <: Number} = ShiftedArrays.circshift!(res, x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
