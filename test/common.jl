@@ -18,7 +18,7 @@ end
     for NN in [3,4,5]
     for kG in map(x-> gen_kGrid(x,NN), grid_list)
         rek = convert.(ComplexF64,deepcopy(kG.ϵkGrid))
-        rek_2 = deepcopy(rek)
+        rek_2 = randn(ComplexF64, size(rek))
         fft_rek = fft(reshape(rek,gridshape(kG)))[:]
         ifft_post_arr = randn(gridshape(kG))
         ifft_post_res1 = Dispersions.ifft_post(kG, ifft_post_arr)
@@ -35,11 +35,11 @@ end
         @test abs(sum(r1 .- t3)) < 10e-8
         r2 = conv_fft1(kG, rek, fft_rek)
         conv_fft1!(kG, t2, rek, fft_rek)
-        @test all(r1 .≈ r2)
+        @test abs(sum(r1 .- r2)) < 10e-8
         @test all(r2 .≈ t2)
         r2 = conv_fft(kG, fft_rek, fft_rek)
         conv_fft!(kG, t2, fft_rek, fft_rek)
-        @test all(r1 .≈ r2)
+        @test abs(sum(r1 .- r2)) < 10e-8
         @test all(r2 .≈ t2)
     end
     end

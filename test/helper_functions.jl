@@ -83,10 +83,10 @@ function naive_conv(kG::KGrid, arr1::AbstractArray, arr2::AbstractArray)
     Nk(kG) == 1 && return arr1 .* arr2
     a1 = reshape(view(arr1,:),gridshape(kG))
     a2 = reshape(view(arr2,:),gridshape(kG))
-    res = zeros(eltype(a1),size(a1))
-    for j in CartesianIndices(a2)
-        for i in CartesianIndices(a1)
-            ii = mod1.(Tuple(j) .+ Tuple(i) .- Tuple(ones(Int,length(i))), size(a1))
+    res = zeros(eltype(a2),size(a2))
+    for j in CartesianIndices(a1)
+        for i in CartesianIndices(a2)
+            ii = mod1.(Tuple(j) .+ Tuple(i) .- Tuple(ones(Int,length(i))), size(a2))
             res[i] += a1[j]*a2[ii...]
         end
     end

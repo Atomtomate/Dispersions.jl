@@ -65,7 +65,7 @@ TODO: at the moment, this function does not use the internal expansion cache of 
 """
 function conv(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
     Nk(kG) == 1 && return arr1 .* arr2
-    res = similar(arr1)
+    res = similar(arr2)
     conv!(kG, res, arr1, arr2)
     return res
 end
