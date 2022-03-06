@@ -1,15 +1,15 @@
-function gen_kGrid(kg::String, Nk::Int)
+function gen_kGrid(kg::String, Nk::Int; rot_angles=nothing)
     #TODO: check for reasonable input
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
-        KGrid(SC, 3, Nk, parse(Float64, data[2]))
+        KGrid(SC, 3, Nk, parse(Float64, data[2]), rot_angles=rot_angles)
     elseif lowercase(data[1]) == "2dsc"
-        KGrid(SC, 2, Nk, parse(Float64, data[2]))
+        KGrid(SC, 2, Nk, parse(Float64, data[2]), rot_angles=rot_angles)
     elseif lowercase(data[1]) == "fcc"
-        KGrid(FCC, 3, Nk, parse(Float64, data[2]))
+        KGrid(FCC, 3, Nk, parse(Float64, data[2]), rot_angles=rot_angles)
     elseif lowercase(data[1]) == "p6m"
-        KGrid_p6m(p6m, 2, Nk, parse(Float64, data[2]))
+        KGrid_p6m(p6m, 2, Nk, parse(Float64, data[2]), rot_angles=rot_angles)
     else
         throw(ArgumentError("Unkown grid type"))
     end

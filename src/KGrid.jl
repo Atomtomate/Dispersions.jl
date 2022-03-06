@@ -47,10 +47,14 @@ struct KGrid{T <: KGridType, D}
     t::Float64
     fft_cache::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
-    function KGrid(GT::Type{T}, D::Int, Nk::Int, t::Float64; fftw_plan=nothing) where T<:KGridType
+    function KGrid(GT::Type{T}, D::Int, Nk::Int, t::Float64; rot_angles=nothing, fftw_plan=nothing) where T<:KGridType
         sampling=[(2*π/Nk) * j - π for j in 1:Nk]
-        kGrid  = basis_transform(GT, collect(Base.product([sampling for Di in 1:D]...)))[:]
-        #TODO: = gen_kGridVecs
+        rot_angles = if rot_angles==nothing 
+                        (D == 2) ? (0.0,) : (0.0,0.0,0.0)
+                    else
+                        rot_angles
+                    end
+        kGrid  = basis_transform(GT, Nk, collect(Base.product([sampling for Di in 1:D]...)), angles=rot_angles)[:]
         #TODO: remove plan?
         fftw_plan = fftw_plan === nothing ? plan_fft(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Nk^D, Nk, kGrid, gen_ϵkGrid(SC,kGrid,t),t,Array{ComplexF64,D}(undef,repeat([Nk],D)...),fftw_plan)
@@ -64,8 +68,17 @@ end
 gen_ϵkGrid(::Type{SC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
 gen_ϵkGrid(::Type{FCC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
 
-basis_transform(::Type{SC}, kGrid::AbstractArray) = kGrid
-basis_transform(::Type{FCC}, kGrid::AbstractArray) = map(kᵢ -> Tuple([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)), kGrid)
+function basis_transform(::Type{SC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
+    rot = length(kGrid[1]) == 2 ?  Angle2d(angles...) : RotXYZ(angles...)
+    s = 2π/Nk - π
+    map(kᵢ-> Tuple( mod.(rot * collect(kᵢ) .- s, 2π) .+ s), kGrid)
+end
+
+function basis_transform(::Type{FCC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
+    rot = RotXYZ(angles...)
+    s = 0#2*(2π/Nk - π)
+    map(kᵢ -> Tuple(mod.(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)) .- s, 4π) .+ s), kGrid)
+end
 
 #TODO: is this the same for all k grids?
 ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = reverse(x)

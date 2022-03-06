@@ -3,8 +3,8 @@ module Dispersions
 using Combinatorics
 using AbstractFFTs, FFTW
 using LinearAlgebra
-using ShiftedArrays
 using FastGaussQuadrature
+using Rotations
 
 # general types
 export KGrid
