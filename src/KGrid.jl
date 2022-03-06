@@ -68,5 +68,5 @@ basis_transform(::Type{SC}, kGrid::AbstractArray) = kGrid
 basis_transform(::Type{FCC}, kGrid::AbstractArray) = map(kᵢ -> Tuple([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)), kGrid)
 
 #TODO: is this the same for all k grids?
-ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
-ifft_post!(kG::KGrid, res::AbstractArray{T,D}, x::AbstractArray{T,D}) where {D, T <: Number} = ShiftedArrays.circshift!(res, x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
+ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = reverse(x)
+ifft_post!(kG::KGrid, x::AbstractArray{T,D}) where {D, T <: Number} = reverse!(x)
