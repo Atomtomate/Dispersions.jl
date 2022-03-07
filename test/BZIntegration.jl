@@ -1,5 +1,5 @@
 @testset "KSum" begin
-    for NN in 2:5
+    for NN in [3,20,30,50,80]
     for grid in grid_list
             kG = gen_kGrid(grid,NN)
             #TODO: this hoilds for SC, find tests for all lattice types

@@ -98,3 +98,11 @@ function conv_old(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractAr
     tmp = fft(reshape(arr1, gridshape(kG))) .* fft(reshape(arr2, gridshape(kG))) |> ifft
     return Dispersions.ifft_post(kG, tmp)[:] ./ Nk(kG)
 end
+
+function find_symmetries(Nk,D)
+    ind = collect(Base.product([(1:Nk) .- floor(Int,Nk/2) for Di in 1:D]...))
+    f2(x) = [Tuple(z[1] .* z[2]) for z in Base.product(permutations([x[1],x[2]]),unique(hcat([collect(permutations([((j <= i) ? 1 : -1) for j in 1:2])) for i in 0:2]...)))][:]
+    f3(x) = [Tuple(z[1] .* z[2]) for z in Base.product(permutations([x[1],x[2],x[3]]),unique(hcat([collect(permutations([((j <= i) ? 1 : -1) for j in 1:3])) for i in 0:3]...)))][:]
+    parents, ops = find_classes(f, ind[:], UInt32.(repeat([1],48)));
+    kmap, k_min = minimal_set(parents, ind[:]);
+end

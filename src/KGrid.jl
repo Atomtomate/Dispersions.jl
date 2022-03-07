@@ -48,8 +48,9 @@ struct KGrid{T <: KGridType, D}
     fft_cache::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
     function KGrid(GT::Type{T}, D::Int, Nk::Int, t::Float64; rot_angles=nothing, fftw_plan=nothing) where T<:KGridType
-        sampling=[(2*π/Nk) * j - π for j in 1:Nk]
+        sampling=[(2*π/(Nk)) * j - π for j in 1:Nk]
         rot_angles = if rot_angles==nothing 
+                        #(D == 2) ? (0.02,) : (0.03,0.04,0.05)
                         (D == 2) ? (0.0,) : (0.0,0.0,0.0)
                     else
                         rot_angles
@@ -69,15 +70,18 @@ gen_ϵkGrid(::Type{SC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(k
 gen_ϵkGrid(::Type{FCC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
 
 function basis_transform(::Type{SC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
-    rot = length(kGrid[1]) == 2 ?  Angle2d(angles...) : RotXYZ(angles...)
-    s = 2π/Nk - π
-    map(kᵢ-> Tuple( mod.(rot * collect(kᵢ) .- s, 2π) .+ s), kGrid)
+    #rot = length(kGrid[1]) == 2 ?  Angle2d(angles...) : RotXYZ(angles...)
+    #s = 2π/Nk - π
+    #map(kᵢ-> Tuple( mod.(rot * collect(kᵢ) .- s, 2π) .+ s), kGrid)
+    #map(kᵢ-> Tuple( rot * collect(kᵢ)), kGrid)
+    kGrid
 end
 
 function basis_transform(::Type{FCC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
-    rot = RotXYZ(angles...)
-    s = 0#2*(2π/Nk - π)
-    map(kᵢ -> Tuple(mod.(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)) .- s, 4π) .+ s), kGrid)
+    #rot = RotXYZ(angles...)
+    #s = 0#2*(2π/Nk - π)
+    #map(kᵢ -> Tuple(mod.(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)) .- s, 4π) .+ s), kGrid)
+    map(kᵢ -> Tuple([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)), kGrid)
 end
 
 #TODO: is this the same for all k grids?

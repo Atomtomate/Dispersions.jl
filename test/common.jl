@@ -19,6 +19,7 @@ end
         for kG in map(x-> gen_kGrid(x,NN), grid_list)
         rek = convert.(ComplexF64,deepcopy(kG.ϵkGrid))
         rek_2 = randn(ComplexF64, size(rek))
+        ones_2 = ones(ComplexF64, size(rek))
         fft_rek = fft(reshape(rek,gridshape(kG)))[:]
         fft_rek_2 = fft(reverse(reshape(rek_2,gridshape(kG))))[:]
         ifft_post_arr = randn(gridshape(kG))
@@ -27,8 +28,9 @@ end
         Dispersions.ifft_post!(kG, ifft_post_res2)
         @test sum(abs.(ifft_post_res1 .- ifft_post_res2)) < 1e-8
         t1 = zeros(ComplexF64,length(kG.ϵkGrid))
-        t2 = zeros(ComplexF64,length(kG.ϵkGrid))
-        t3 = naive_conv(kG, rek, rek_2)[:]
+        t2 = naive_conv(kG, rek, rek_2)[:]
+        t3 = conv(kG, rek, ones_2)
+        t4 = conv(kG, ones_2, rek)
         b1 = deepcopy(rek)
         b2 = deepcopy(rek_2)
         r1 = conv(kG, rek, rek_2)
@@ -36,7 +38,9 @@ end
         @test all(rek_2 .== b2)
         conv!(kG, t1, rek, rek_2)
         @test sum(abs.(r1 .- t1)) < 1e-8
-        @test sum(abs.(r1 .- t3)) < 1e-8        # fft conv .- naive conv
+        @test sum(abs.(r1 .- t2)) < 1e-8        # fft conv .- naive conv
+        @test all(abs.(sum(rek)/Nk(kG) .- t3) .< 1e-8 )
+        @test all(abs.(sum(rek)/Nk(kG) .- t4) .< 1e-8 )
         r2 = conv_fft1(kG, rek, fft_rek_2)
         conv_fft1!(kG, t2, rek, fft_rek_2)
         @test sum(abs.(r1 .- r2)) < 1e-8        # fft conv .- 1 pre computed fft conv
