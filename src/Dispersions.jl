@@ -3,20 +3,20 @@ module Dispersions
 using Combinatorics
 using AbstractFFTs, FFTW
 using LinearAlgebra
+using ShiftedArrays
 using FastGaussQuadrature
-using Rotations
 
 # general types
-export KGrid
+export KGrid, FullKGrid, ReducedKGrid
 
 # access functions
 export gridPoints, Nk, gridshape, dispersion
 
 # grid functions
-export conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
+export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
 # grids 
-export gen_kGrid, SC, FCC
+export gen_kGrid, cP, cF, p6m, FileDisp
 
 # sum types
 export KSum
@@ -25,13 +25,16 @@ export kintegrate
 
 
 include("Types.jl")
-include("KGrid.jl")
 include("common.jl")
-include("IO.jl")
+include("SC.jl")
+include("FCC.jl")
+include("hexagonal.jl")
+include("fileDisp.jl")
 include("BZIntegration.jl")
+include("IO_SC.jl")
 
 
 end
 
-#TODO: implement input from basis vector
+#TODO:iplement input fro mfile
 #TODO: implement https://arxiv.org/pdf/2104.05856.pdf

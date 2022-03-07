@@ -1,6 +1,6 @@
 abstract type DummyGrid <: Dispersions.KGridType end
-struct DummyKGrid end
+struct DummyKGrid <: FullKGrid{DummyGrid,0} end
 dG = DummyKGrid()
 
-@test_throws MethodError Dispersions.KGrid(dG)
-@test_throws MethodError gridshape(dG)
+@test_throws MethodError Dispersions.reduceKGrid(dG)
+@test_throws ArgumentError gridshape(dG)

@@ -16,14 +16,16 @@ struct GaussLegendre   <: KSpaceIntegrator
     end
 end
 
+
 kintegrate(kG::Nothing, arr::AbstractArray) = arr
 
-function kintegrate(kG::T1, arr::AbstractArray, dim::Int, type::T2 = KSum()) where {T1 <: KGrid, T2 <: KSum}
+function kintegrate(kG::T1, arr::AbstractArray, dim::Int, type::T2 = KSum()) where {T1 <: ReducedKGrid, T2 <: KSum}
+    size(arr)[dim] != length(kG.kMult) && throw(ArgumentError("Dimension does not seem to be on a k grid! Length is $(size(arr)[dim]) but should be $(length(kG.kMult))."))
     return mapslices(sub_arr -> kintegrate(kG, sub_arr, type=type), arr, dims=dim)
 end
 
-function kintegrate(kG::T1, arr::AbstractArray{T2,1}; type::T3 = KSum()) where {T1 <: KGrid, T2 <: Number, T3 <: KSum}
-    return sum(arr)/Nk(kG)
+function kintegrate(kG::T1, arr::AbstractArray{T2,1}; type::T3 = KSum()) where {T1 <: ReducedKGrid, T2 <: Number, T3 <: KSum}
+    return dot(kG.kMult, arr)/Nk(kG)
 end
 
 #function kintegrate(grid::T1, arr::AbstractArray; dim=1, type::T2 = KSum()) where {T1 <: FullKGrid, T2 <: KSum}
