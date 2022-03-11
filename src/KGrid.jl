@@ -66,7 +66,7 @@ end
 # -------------------------------------------------------------------------------- #
 #TODO: this can be generalized for arbitrary basis vectors
 gen_ϵkGrid(::Type{SC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
-gen_ϵkGrid(::Type{FCC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
+gen_ϵkGrid(::Type{FCC}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -4*t*(cos(kᵢ[1]/2)*cos(kᵢ[2]/2)+cos(kᵢ[1]/2)*cos(kᵢ[3]/2)+cos(kᵢ[2]/2)*cos(kᵢ[3]/2)), kGrid))
 
 function basis_transform(::Type{SC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
     rot = length(kGrid[1]) == 2 ?  Angle2d(angles...) : RotXYZ(angles...)
@@ -77,7 +77,7 @@ end
 function basis_transform(::Type{FCC}, Nk::Int, kGrid::AbstractArray; angles=(0.0,0.0,0.0))
     rot = RotXYZ(angles...)
     s = 0#2*(2π/Nk - π)
-    map(kᵢ -> Tuple(mod.(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ)) .- s, 4π) .+ s), kGrid)
+    map(kᵢ -> Tuple(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ))), kGrid)
 end
 
 #TODO: is this the same for all k grids?
