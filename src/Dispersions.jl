@@ -36,5 +36,5 @@ include("IO_SC.jl")
 
 end
 
-#TODO:iplement input fro mfile
+#TODO: implement input from file
 #TODO: implement https://arxiv.org/pdf/2104.05856.pdf
