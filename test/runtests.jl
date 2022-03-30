@@ -3,7 +3,8 @@ using Test
 using Dispersions
 
 
-grid_list = ["2Dsc-1.3", "3Dsc-1.3", "p6m-1.1"]
+grid_list = ["2Dsc-1.3", "3Dsc-1.3", "fcc-1.4"]
+num_eps = 1e-8
 
 include("./helper_functions.jl")
 @testset "SC" begin

@@ -6,7 +6,7 @@ function gen_kGrid(kg::String, Nk::Int; full=false, sampling=[(2*π/Nk) * j - π
     elseif lowercase(data[1]) == "2dsc"
         FullKGrid_cP(2, Nk, parse(Float64, data[2]), sampling)
     elseif lowercase(data[1]) == "fcc"
-        FullKGrid_cF(Nk, parse(Float64, data[2]), sampling)
+        FullKGrid_cF(Nk, parse(Float64, data[2]), [(2*π/Nk) * (j-1) for j in 1:Nk])
     elseif lowercase(data[1]) == "p6m"
         FullKGrid_p6m(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "file"
