@@ -85,7 +85,6 @@ end
 # -------------------------------------------------------------------------------- #
 #                                   Interface                                      #
 # -------------------------------------------------------------------------------- #
-
 gridshape(kG::ReducedKGrid_cF) = ntuple(_ -> kG.Ns, 3)
 gridshape(kG::FullKGrid_cF) = ntuple(_ -> kG.Ns, 3)
 
@@ -139,7 +138,6 @@ function reduceKGrid(kG::FullKGrid{cF,3})
 end
 
 gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
-ifft_post(kG::ReducedKGrid_cF, x::Array{T,N}) where {N, T <: Number} = x #ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 
 #TODO: implement
 function build_expand_mapping_cF(D::Int, Ns::Int, ind_red::Array)

@@ -79,7 +79,3 @@ function basis_transform(::Type{FCC}, Nk::Int, kGrid::AbstractArray; angles=(0.0
     s = 0#2*(2π/Nk - π)
     map(kᵢ -> Tuple(rot * ([-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0] * collect(kᵢ))), kGrid)
 end
-
-#TODO: is this the same for all k grids?
-ifft_post(kG::KGrid, x::Array{T,N}) where {N, T <: Number} = reverse(x)
-ifft_post!(kG::KGrid, x::AbstractArray{T,D}) where {D, T <: Number} = reverse!(x)

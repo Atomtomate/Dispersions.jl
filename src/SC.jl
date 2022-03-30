@@ -130,7 +130,6 @@ function reduceKGrid(kG::FullKGrid{cP,D}) where D
 end
 
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
-ifft_post(kG::ReducedKGrid_cP, x::Array{T,N}) where {N, T <: Number} = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
 
 function build_expand_mapping_SC(D::Int, Ns::Int, ind_red::Array)
     expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
