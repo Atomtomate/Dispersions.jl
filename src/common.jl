@@ -1,4 +1,5 @@
 function gen_kGrid(kg::String, Nk::Int; full=false, sampling=[(2*π/Nk) * j - π for j in 1:Nk])
+    findfirst("-", kg) === nothing && throw("Please provide lattice type and hopping, e.g. SC3D-1.1")
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
