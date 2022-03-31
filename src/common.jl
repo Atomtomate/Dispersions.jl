@@ -1,13 +1,13 @@
-function gen_kGrid(kg::String, Nk::Int; full=false, sampling=[(2*π/Nk) * j - π for j in 1:Nk])
+function gen_kGrid(kg::String, Nk::Int; full=false)
     findfirst("-", kg) === nothing && throw("Please provide lattice type and hopping, e.g. SC3D-1.1")
     sp = findfirst("-", kg)[1]
     data = [kg[1:(sp-1)], kg[(sp+1):end]]
     grid = if lowercase(data[1]) == "3dsc"
-        FullKGrid_cP(3, Nk, parse(Float64, data[2]), sampling)
+        FullKGrid_cP(3, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "2dsc"
-        FullKGrid_cP(2, Nk, parse(Float64, data[2]), sampling)
+        FullKGrid_cP(2, Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "fcc"
-        FullKGrid_cF(Nk, parse(Float64, data[2]), [(2*π/Nk) * (j-1) for j in 1:Nk])
+        FullKGrid_cF(Nk, parse(Float64, data[2]), )
     elseif lowercase(data[1]) == "p6m"
         FullKGrid_p6m(Nk, parse(Float64, data[2]))
     elseif lowercase(data[1]) == "file"
@@ -150,9 +150,7 @@ function conv!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     gs = gridshape(kG)
     arr1_fft = fft(expandKArr(kG, arr1))
-    println("arr1", arr1_fft)
     arr2_fft = fft(reverse(expandKArr(kG, arr2)))
-    println("arr2", arr2_fft)
     conv_fft!(kG, res, arr1_fft, arr2_fft)
     #= TODO: use cache instead of new memory
     res_v = reshape(view(res,:),gs)
@@ -213,8 +211,8 @@ Inplace version of [`conv_fft`](@ref).
 """
 function conv_fft!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    tmp = reverse(ifft(arr1 .* arr2))
-    res[:] = reduceKArr(kG, tmp) ./ Nk(kG)
+    res[:] = conv_post(kG, ifft(arr1 .* arr2)) ./ Nk(kG)
+    #println(tmp)
     #= TODO: use cache
     res_v = reshape(view(res,:),gridshape(kG))
     for i in eachindex(kG.fft_cache)

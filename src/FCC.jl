@@ -38,7 +38,8 @@ struct FullKGrid_cF <: FullKGrid{cF, 3}
     ϵkGrid::GridDisp
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
-    function FullKGrid_cF(Nk::Int, t::Float64, sampling::AbstractArray; fftw_plan=nothing)
+    function FullKGrid_cF(Nk::Int, t::Float64; fftw_plan=nothing)
+        sampling = [(2*π/Nk) * (j-1) for j in 1:Nk]
         fccBasisTransform::Matrix{Float64} = [-1.0 1.0 1.0; 1.0 -1.0 1.0; 1.0 1.0 -1.0]
 		kGrid  =  collect(map( x -> Tuple(fccBasisTransform *  collect(x)), Base.product([sampling for Di in 1:3]...)))[:]
 		fftw_plan = if fftw_plan === nothing
@@ -138,6 +139,8 @@ function reduceKGrid(kG::FullKGrid{cF,3})
 end
 
 gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*(cos(kᵢ[1])*cos(kᵢ[2])+cos(kᵢ[1])*cos(kᵢ[3])+cos(kᵢ[2])*cos(kᵢ[3])), kGrid))
+conv_post(kG::ReducedKGrid_cF, x::Array{T,N}) where {N, T <: Number} = reverse(x)[:] #ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1)
+conv_sample_post(kG::ReducedKGrid_cF, x) = x
 
 #TODO: implement
 function build_expand_mapping_cF(D::Int, Ns::Int, ind_red::Array)

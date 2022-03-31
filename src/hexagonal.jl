@@ -110,3 +110,11 @@ function reduceKGrid(kG::FullKGrid{p6m})
 end
 
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
+conv_post(kG::ReducedKGrid_p6m, x::Array{T,2}) where T <: Number = reverse(x)[:]
+conv_sample_post(kG::ReducedKGrid_p6m, x) = x
+#function ifft_post(kG::ReducedKGrid_p6m, x::Array{T,2}) where T <: Number
+#    nh = trunc(Int, size(x,2)/2)
+#    x[1:nh,1:nh],x[nh+1:end,nh+1:end] = x[nh+1:end,nh+1:end],x[1:nh,1:nh]
+#    x[1:nh,nh+1:end],x[nh+1:end,1:nh] = x[nh+1:end,1:nh],x[1:nh,nh+1:end]
+#    return x
+#end

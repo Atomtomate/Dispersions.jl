@@ -2,6 +2,7 @@ using Base.Iterators
 
 
 @testset "2D" begin
+    @test_throws ErrorException gen_kGrid("2Dsc-1.3",3)
     r2 = gen_kGrid("2Dsc-1.3",2)
     r16 = gen_kGrid("2Dsc-1.4",16)
     @test Nk(r2) == 2^2
@@ -18,6 +19,7 @@ end
 
 
 @testset "3D" begin
+    @test_throws ErrorException gen_kGrid("2Dsc-1.3",3)
     r2 = gen_kGrid("3Dsc-1.2",2)
     r16 = gen_kGrid("3Dsc-1.1",4)
     indTest = reduceKArr(r2, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
@@ -35,7 +37,7 @@ end
 end
 
 @testset "reduce_expand" begin
-    for NN in 1:16
+    for NN in 2:2:16
         gl_gr, gl_w  = Dispersions.gausslegendre(NN);
         gr2 = Dispersions.gen_kGrid("2Dsc-1.3",NN, full=true)
         gr3 = Dispersions.gen_kGrid("3Dsc-1.3",NN, full=true)

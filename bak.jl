@@ -35,13 +35,8 @@
         rek_2_red = randn(ComplexF64, size(rek))
         ones_2_red = ones(ComplexF64, size(rek))
         println(size(rek))
-        #fft_rek = fft(reshape(rek,gridshape(kG)))[:]
-        #fft_rek_2 = fft(reverse(reshape(rek_2,gridshape(kG))))[:]
-        #ifft_post_arr = randn(gridshape(kG))
-        #ifft_post_res1 = Dispersions.ifft_post(kG, ifft_post_arr)
-        #ifft_post_res2 = deepcopy(ifft_post_arr)
-        #Dispersions.ifft_post!(kG, ifft_post_res2)
-        #@test sum(abs.(ifft_post_res1 .- ifft_post_res2)) < 1e-8
+        fft_rek = fft(reshape(rek,gridshape(kG)))[:]
+        fft_rek_2 = fft(reverse(reshape(rek_2,gridshape(kG))))[:]
         t1 = zeros(ComplexF64,length(kG.ϵkGrid))
         t2 = naive_conv(kG, rek, rek_2)[:]
         t3 = conv(kG, rek, ones_2)
@@ -49,8 +44,6 @@
         b1 = deepcopy(rek)
         b2 = deepcopy(rek_2)
         r1 = conv(kG, rek, rek_2)
-        @test all(rek .== b1)
-        @test all(rek_2 .== b2)
         conv!(kG, t1, rek, rek_2)
         @test sum(abs.(r1 .- t1)) < 1e-8
         @test sum(abs.(r1 .- t2)) < 1e-8        # fft conv .- naive conv

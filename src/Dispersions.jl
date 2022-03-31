@@ -16,7 +16,7 @@ export gridPoints, Nk, gridshape, dispersion
 export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
 # grids 
-export gen_kGrid, cP, cF, p6m, FileDisp
+export gen_kGrid, cP, cF, p6m
 
 # sum types
 export KSum
@@ -29,7 +29,6 @@ include("common.jl")
 include("SC.jl")
 include("FCC.jl")
 include("hexagonal.jl")
-include("fileDisp.jl")
 include("BZIntegration.jl")
 include("IO_SC.jl")
 

@@ -11,13 +11,13 @@ See also [`FullKGrid_cP_3D`](@ref) and [`FullKGrid_cP_3D`](@ref)
 ```
 julia> gen_cP_kGrid(2, 2)
 """
-function gen_cP_kGrid(Nk::Int64, D::Int64, t::Float64, sampling::AbstractArray)
+function gen_cP_kGrid(Nk::Int64, D::Int64, t::Float64)
     if D == 2
-        return FullKGrid_cP(2, Nk, t, sampling)
+        return FullKGrid_cP(2, Nk, t)
     elseif D == 3
-        return FullKGrid_cP(3, Nk, t, sampling)
+        return FullKGrid_cP(3, Nk, t)
     else
-        throw("Simple Cubic only implemented for 2D and 3D")
+        error("Simple Cubic only implemented for 2D and 3D")
     end
 end
 
@@ -45,7 +45,9 @@ struct FullKGrid_cP{D} <: FullKGrid{cP, D}
     ϵkGrid::GridDisp
     t::Float64
     fftw_plan::FFTW.cFFTWPlan
-    function FullKGrid_cP(D::Int, Nk::Int, t::Float64, sampling::AbstractArray; fftw_plan=nothing)
+    function FullKGrid_cP(D::Int, Nk::Int, t::Float64; fftw_plan=nothing)
+        (Nk%2) != 0 && error("Convolution requires even number of K points for now!")
+        sampling=[(2*π/Nk) * j - π for j in 1:Nk]
         kGrid  = collect(Base.product([sampling for Di in 1:D]...))[:]
         fftw_plan = fftw_plan === nothing ? plan_fft!(randn(Complex{Float64}, repeat([Nk], D)...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{D}(Nk^D, Nk, kGrid, gen_ϵkGrid(cP,kGrid,t),t,fftw_plan)
@@ -130,6 +132,12 @@ function reduceKGrid(kG::FullKGrid{cP,D}) where D
 end
 
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where T <: Real = collect(map(kᵢ -> -2*t*sum(cos.(kᵢ)), kGrid))
+#TODO: optimimize this, i.e. write reduce_from_conv function
+#Description: reverse is part of rewriting the usual to our convolution definition. The circshift rotates the q= 0 point back into the middle of the array (since we sample from -pi to pi for SC.
+conv_post(kG::ReducedKGrid_cP, x::Array{T,N}) where {N, T <: Number} = reduceKArr(kG, ShiftedArrays.circshift(reverse(x), floor.(Int, gridshape(kG) ./ 2) .- 1))
+conv_sample_post(kG::ReducedKGrid_cP, x) = ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .- 1)
+#TODO: this somehow works when not doing the reverse on the second input. We should find out why, this makes the convolution a lot faster
+conv_post_old(kG::ReducedKGrid_cP, x::Array{T,N}) where {N, T <: Number} = reduceKArr(kG, ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1))
 
 function build_expand_mapping_SC(D::Int, Ns::Int, ind_red::Array)
     expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
