@@ -13,7 +13,16 @@ export KGrid
 export gridPoints, Nk, gridshape, dispersion
 
 # grid functions
-export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
+export reduceKArr,
+    reduceKArr!,
+    expandKArr,
+    expandKArr!,
+    conv,
+    conv!,
+    conv_fft,
+    conv_fft!,
+    conv_fft1,
+    conv_fft1!
 
 # grids 
 export gen_kGrid, cP, cF, p6m

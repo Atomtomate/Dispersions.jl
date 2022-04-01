@@ -1,7 +1,16 @@
 # ================================================================================ #
 #                                   Interface                                      #
 # ================================================================================ #
-export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
+export reduceKArr,
+    reduceKArr!,
+    expandKArr,
+    expandKArr!,
+    conv,
+    conv!,
+    conv_fft,
+    conv_fft!,
+    conv_fft1,
+    conv_fft1!
 
 # ------------------------------ Access Functions -----------------------------
 """
@@ -24,14 +33,14 @@ Nk(kG) = kG.Nk
 Number of grid points as integer value. `Nk` needs to be accessible for all implemented 
 full and reduced k grids.
 """
-gridPoints(kG::T) where T <: KGrid = kG.kGrid
+gridPoints(kG::T) where {T<:KGrid} = kG.kGrid
 
 """
     dispersion(kG::T)::Int where T <: KGrid
 
 Returns dispersion relation of grid.
 """
-dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
+dispersion(kG::T) where {T<:KGrid} = kG.ϵkGrid
 
 # ------------------------------ Helper Functions -----------------------------
 """
@@ -52,8 +61,12 @@ end
 
 Inplace version of [`reduceKArr`](@ref). The results are written to `res`.
 """
-function reduceKArr!(kG::KGrid{gT,D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {gT,T,D}
-    for (i,ki) in enumerate(kG.kInd)
+function reduceKArr!(
+    kG::KGrid{gT,D},
+    res::AbstractArray{T,1},
+    arr::AbstractArray{T,D},
+) where {gT,T,D}
+    for (i, ki) in enumerate(kG.kInd)
         @inbounds res[i] = arr[ki...]
     end
 end
@@ -67,8 +80,15 @@ end
 Takes a kGrid `kGrid` and arbitrary data `arr` over a reduced BZ and returns an array with data over
 full BZ. This is mainly used before convolutions, since they require data over the full BZ.
 """
-function expandKArr(kG::KGrid{gT,D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {gT,T,D}
-    length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
+function expandKArr(
+    kG::KGrid{gT,D},
+    arr::AbstractArray{T,1},
+)::AbstractArray{T,D} where {gT,T,D}
+    length(arr) != length(kG.kInd) && throw(
+        ArgumentError(
+            "length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching",
+        ),
+    )
     res = similar(arr, gridshape(kG)...)
     expandKArr!(kG, res, arr)
     return res
@@ -79,8 +99,8 @@ end
 
 Inplace version of [`expandKArr`](@ref). The results are written to `kG.expand_cache`.
 """
-function expandKArr!(kG::KGrid, arr::Array{Complex{Float64}, 1})
-    for (ri,perms) in enumerate(kG.expand_perms)
+function expandKArr!(kG::KGrid, arr::Array{Complex{Float64},1})
+    for (ri, perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds kG.expand_cache[p] = arr[ri]
         end
@@ -92,8 +112,12 @@ end
 
 Inplace version of [`expandKArr`](@ref). The results are written to `res`.
 """
-function expandKArr!(kG::KGrid{gT,D}, res::AbstractArray{T,D}, arr::Array{T, 1}) where {gT,T,D}
-    for (ri,perms) in enumerate(kG.expand_perms)
+function expandKArr!(
+    kG::KGrid{gT,D},
+    res::AbstractArray{T,D},
+    arr::Array{T,1},
+) where {gT,T,D}
+    for (ri, perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds res[p] = arr[ri]
         end
@@ -108,7 +132,11 @@ end
 Computes the convolution with a plus sign of data over two arrays `arr1` and `arr2`,
 i.e. ``res[k] = \\sum_{q \\in \\text{BZ}} arr1[k] * arr2[k+q]``.
 """
-function conv(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
+function conv(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64,1},
+)
     Nk(kG) == 1 && return arr1 .* arr2
     res = similar(arr2)
     conv!(kG, res, arr1, arr2)
@@ -122,7 +150,12 @@ end
 
 Inplace version of [`conv`](@ref). The results are written to `res`.
 """
-function conv!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64,1})
+function conv!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64,1},
+)
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     gs = gridshape(kG)
     arr1_fft = fft(expandKArr(kG, arr1))
@@ -142,7 +175,11 @@ end
 Version of [`conv`](@ref) for precomputed `arr2`. Note, that reversing the array is also
 expected, i.e. `arr2 = fft(reverse(in_arr2))`.
 """
-function conv_fft1(kG::KGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
+function conv_fft1(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+)
     Nk(kG) == 1 && return arr1 .* arr2
     res = similar(arr2)
     conv_fft1!(kG, res, arr1, arr2)
@@ -154,7 +191,12 @@ end
 
 Inplace version of [`conv_fft1`](@ref).
 """
-function conv_fft1!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{ComplexF64})
+function conv_fft1!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64},
+)
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     arr1_fft = fft(expandKArr(kG, arr1))
     conv_fft!(kG, res, arr1_fft, arr2_fft)
@@ -170,9 +212,13 @@ end
 Version of [`conv`](@ref) for precomputed `arr1` and `arr2`. Note, that reversing `arr2` is also
 expected, see also [`conv_fft1`](@ref).
 """
-function conv_fft(kG::KGrid, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
+function conv_fft(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+)
     Nk(kG) == 1 && return arr1 .* arr2
-    res = Array{ComplexF64, 1}(undef, length(kG.kMult))
+    res = Array{ComplexF64,1}(undef, length(kG.kMult))
     conv_fft!(kG, res, arr1, arr2)
     # TODO: better wayt to determine shape res = similar(arr2)
     #conv_fft!(kG, view(res,:), view(arr1,:), view(arr2,:))
@@ -185,7 +231,12 @@ end
 
 Inplace version of [`conv_fft`](@ref).
 """
-function conv_fft!(kG::KGrid, res::AbstractArray{ComplexF64,1}, arr1::AbstractArray{ComplexF64}, arr2::AbstractArray{ComplexF64})
+function conv_fft!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+)
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     res[:] = conv_post(kG, ifft(arr1 .* arr2)) ./ Nk(kG)
     #println(tmp)

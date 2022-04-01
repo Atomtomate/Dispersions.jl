@@ -1,49 +1,58 @@
 # ---------------------------- Auxilliary Functions -------------------------------
 # TODO: avoid reshape
 cut_mirror(arr::Base.Iterators.ProductIterator) = cut_mirror(collect(arr))
-cut_mirror(arr::Array{T, 2}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end]
-cut_mirror(arr::Array{T, 3}) where T = arr[ceil(Int,size(arr,1)/2):end, ceil(Int,size(arr,2)/2):end, ceil(Int,size(arr,3)/2):end]
+cut_mirror(arr::Array{T,2}) where {T} =
+    arr[ceil(Int, size(arr, 1) / 2):end, ceil(Int, size(arr, 2) / 2):end]
+cut_mirror(arr::Array{T,3}) where {T} = arr[
+    ceil(Int, size(arr, 1) / 2):end,
+    ceil(Int, size(arr, 2) / 2):end,
+    ceil(Int, size(arr, 3) / 2):end,
+]
 #reverse cut. This is a helper function to avoid reversing the array after fft-convolution trick. assumes reserved input and returns correct array including cut
 ifft_cut_mirror(arr::Base.Iterators.ProductIterator) = ifft_cut_mirror(collect(arr))
-ifft_cut_mirror(arr::Array{T, 2}) where T = arr[end-1:-1:ceil(Int,size(arr,1)/2-1), 
-                                                          end-1:-1:ceil(Int,size(arr,2)/2-1)]
-ifft_cut_mirror(arr::Array{T, 3}) where T = arr[end-1:-1:ceil(Int,size(arr,1)/2-1), 
-                                                          end-1:-1:ceil(Int,size(arr,2)/2-1), 
-                                                          end-1:-1:ceil(Int,size(arr,3)/2-1)]
+ifft_cut_mirror(arr::Array{T,2}) where {T} =
+    arr[end-1:-1:ceil(Int, size(arr, 1) / 2 - 1), end-1:-1:ceil(Int, size(arr, 2) / 2 - 1)]
+ifft_cut_mirror(arr::Array{T,3}) where {T} = arr[
+    end-1:-1:ceil(Int, size(arr, 1) / 2 - 1),
+    end-1:-1:ceil(Int, size(arr, 2) / 2 - 1),
+    end-1:-1:ceil(Int, size(arr, 3) / 2 - 1),
+]
 
 
 function test_cut(arr)
     arr2 = copy(arr)
     arr3 = ifft_cut_mirror(arr2)
-    ll = floor(Int,size(arr,1)/2 + 1)
-    index = (ndims(arr)) == 2 ? [[x,y] for x=1:ll for y=1:x] : [[x,y,z] for x=1:ll for y=1:x for z = 1:y]
+    ll = floor(Int, size(arr, 1) / 2 + 1)
+    index =
+        (ndims(arr)) == 2 ? [[x, y] for x = 1:ll for y = 1:x] :
+        [[x, y, z] for x = 1:ll for y = 1:x for z = 1:y]
     arr4 = Array{eltype(arr)}(undef, length(index))
-    for (i,ti) in enumerate(index)
+    for (i, ti) in enumerate(index)
         arr4[i] = arr3[ti...]
     end
     return arr4
 end
 
 
-function reduce_old(kGrid) 
+function reduce_old(kGrid)
     kGrid_arr = collect(kGrid)
-    Nk = size(kGrid_arr,1)
+    Nk = size(kGrid_arr, 1)
     if ndims(kGrid_arr) == 2
-        index = [[x,y] for x=1:Nk for y=1:x]
+        index = [[x, y] for x = 1:Nk for y = 1:x]
     elseif ndims(kGrid_arr) == 3
-        index = [[x,y,z] for x=1:Nk for y=1:x for z = 1:y]
+        index = [[x, y, z] for x = 1:Nk for y = 1:x for z = 1:y]
     else
         throw(BoundsError("Number of dimensions for grid must be 2 or 3"))
     end
     grid_red = Array{eltype(kGrid_arr)}(undef, length(index))
-    for (i,ti) in enumerate(index)
+    for (i, ti) in enumerate(index)
         grid_red[i] = kGrid_arr[ti...]
     end
     return grid_red
 end
 
 # typical use case.
-function naive_bubble(fk) where T
+function naive_bubble(fk) where {T}
     ωn = 0
     νn = 0
     Σ_loc = 2.734962277113537 - 0.41638191263582125im
@@ -52,12 +61,12 @@ function naive_bubble(fk) where T
     disp(ki) = Dispersions.gen_ϵkGrid(T, [ki], fk.t)[1]
     res = zeros(Complex{Float64}, length(fk.kGrid))
 
-    for (kii,ki) in enumerate(fk.kGrid)
-        for (qii,qi) in enumerate(fk.kGrid)
+    for (kii, ki) in enumerate(fk.kGrid)
+        for (qii, qi) in enumerate(fk.kGrid)
             Σ_int_ωn = Σ_loc
             Σ_int_ωn_νn = Σ_loc
-            w1 = 1im * (π*(2*ωn+1)/β) + μ - Σ_int_ωn - disp(ki)
-            w2 = 1im * (π*(2*(ωn+νn)+1)/β) + μ - Σ_int_ωn_νn - disp(ki .+ qi)
+            w1 = 1im * (π * (2 * ωn + 1) / β) + μ - Σ_int_ωn - disp(ki)
+            w2 = 1im * (π * (2 * (ωn + νn) + 1) / β) + μ - Σ_int_ωn_νn - disp(ki .+ qi)
             res[qii] = res[qii] - 1.0 / (w1 * w2)
         end
     end
@@ -69,8 +78,12 @@ function naive_conv(arr1::AbstractArray, arr2::AbstractArray)
     for j in CartesianIndices(arr2)
         for i in CartesianIndices(arr1)
             #ii = mod1.(Tuple(j) .+ Tuple(i) .- Tuple(ones(Int,length(i))), size(arr1))
-            ii = mod.(Tuple(j) .+ Tuple(i) .- Tuple(2 .* ones(Int,length(i))), size(arr1)) .+ Tuple(ones(Int,length(i)))
-            res[j] += arr1[i]*arr2[ii...]
+            ii =
+                mod.(
+                    Tuple(j) .+ Tuple(i) .- Tuple(2 .* ones(Int, length(i))),
+                    size(arr1),
+                ) .+ Tuple(ones(Int, length(i)))
+            res[j] += arr1[i] * arr2[ii...]
         end
     end
     return res
@@ -80,9 +93,9 @@ function naive_conv_fft_def(arr1::AbstractArray, arr2::AbstractArray)
     res = zeros(eltype(arr1), size(arr1))
     for j in CartesianIndices(arr1)
         for i in CartesianIndices(arr2)
-            ii = mod.(Tuple(i) .- (Tuple(j)), size(arr2)) .+ Tuple(ones(Int,length(i)))
-            res[i] += arr1[j]*arr2[ii...]
+            ii = mod.(Tuple(i) .- (Tuple(j)), size(arr2)) .+ Tuple(ones(Int, length(i)))
+            res[i] += arr1[j] * arr2[ii...]
         end
     end
-    return res 
+    return res
 end
