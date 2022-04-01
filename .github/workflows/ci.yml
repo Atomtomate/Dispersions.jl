@@ -63,7 +63,7 @@ jobs:
         run: julia --project=docs/ -e '
             using Pkg;
             Pkg.activate("$(pwd())");
-            Pkg.add("https://github.com/Atomtomate/EquivalenceClassesConstructor.jl");
+            Pkg.add(url="https://github.com/Atomtomate/EquivalenceClassesConstructor.jl");
             Pkg.develop(PackageSpec(path=pwd()));
             Pkg.instantiate()'
       - name: Build and deploy
