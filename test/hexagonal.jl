@@ -13,15 +13,3 @@ end
     kG = gen_kGrid("p6m-1.3",4)
     @test sum(kG.kMult) == Nk(kG)
 end
-
-@testset "reduce_expand" begin
-    for NN in 2:5
-        gr2 = Dispersions.gen_kGrid("p6m-1.3",NN, full=true)
-        gr2_r = Dispersions.reduceKGrid(gr2)
-        ek2 = reshape(gr2.ϵkGrid, (NN,NN))
-        @test all(reduceKArr(gr2_r, ek2) .≈ gr2_r.ϵkGrid)
-        gr2_cut = cut_mirror(ek2)
-        @test all(map(x-> x in gr2.ϵkGrid, gr2_cut)) # No data lost
-        @test all(abs.(expandKArr(gr2_r, gr2_r.ϵkGrid) .- ek2) .< 1.0/10^10)
-    end
-end

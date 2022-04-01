@@ -1,38 +1,15 @@
-function gen_kGrid(kg::String, Nk::Int; full=false)
-    findfirst("-", kg) === nothing && throw("Please provide lattice type and hopping, e.g. SC3D-1.1")
-    sp = findfirst("-", kg)[1]
-    data = [kg[1:(sp-1)], kg[(sp+1):end]]
-    grid = if lowercase(data[1]) == "3dsc"
-        FullKGrid_cP(3, Nk, parse(Float64, data[2]))
-    elseif lowercase(data[1]) == "2dsc"
-        FullKGrid_cP(2, Nk, parse(Float64, data[2]))
-    elseif lowercase(data[1]) == "fcc"
-        FullKGrid_cF(Nk, parse(Float64, data[2]), )
-    elseif lowercase(data[1]) == "p6m"
-        FullKGrid_p6m(Nk, parse(Float64, data[2]))
-    elseif lowercase(data[1]) == "file"
-        FullKGrid_File(data[2])
-    else
-        throw(ArgumentError("Unkown grid type"))
-    end
-    res = full ? grid : reduceKGrid(grid)
-    return res
-end
-
-
-
 # ================================================================================ #
 #                                   Interface                                      #
 # ================================================================================ #
+export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 
-# ------------------------------ Helper Functions -----------------------------
-
+# ------------------------------ Access Functions -----------------------------
 """
     gridshape(kG::T) where T <: KGrid
 
-shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D sc) 
+shape of kGrid (e.g. `(kG.Ns, kG.Ns)` for 2D cP) 
 """
-gridshape(kG) = throw(ArgumentError("KGrid Instance of $(typeof(kG)) not found"))
+gridshape(kG::KGrid{T,D}) where {T,D} = ntuple(_ -> kG.Ns, D)
 
 """
     Nk(kG::T) where T <: KGrid
@@ -57,14 +34,13 @@ Returns dispersion relation of grid.
 dispersion(kG::T) where T <: KGrid = kG.ϵkGrid
 
 # ------------------------------ Helper Functions -----------------------------
-export reduceKArr, reduceKArr!, expandKArr, expandKArr!, conv, conv!, conv_fft, conv_fft!, conv_fft1, conv_fft1!
 """
-    reduceKArr(kGrid::ReducedKGrid, arr)
+    reduceKArr(kGrid::KGrid, arr)
 
 Takes a kGrid `kGrid` and arbitrary data `arr` over a full BZ and returns an array with data over fully irreducible
 BZ. This is mainly used after convolutions, since they require data over the full BZ.
 """
-function reduceKArr(kG::ReducedKGrid{gT,D}, arr::AbstractArray{T,D}) where {gT,T,D}
+function reduceKArr(kG::KGrid{gT,D}, arr::AbstractArray{T,D}) where {gT,T,D}
     res = similar(arr, length(kG.kInd))
     reduceKArr!(kG, res, arr)
     return res
@@ -72,11 +48,11 @@ end
 
 
 """
-    reduceKArr!(kGrid::ReducedKGrid, res, arr)
+    reduceKArr!(kGrid::KGrid, res, arr)
 
 Inplace version of [`reduceKArr`](@ref). The results are written to `res`.
 """
-function reduceKArr!(kG::ReducedKGrid{gT,D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {gT,T,D}
+function reduceKArr!(kG::KGrid{gT,D}, res::AbstractArray{T,1}, arr::AbstractArray{T,D}) where {gT,T,D}
     for (i,ki) in enumerate(kG.kInd)
         @inbounds res[i] = arr[ki...]
     end
@@ -86,12 +62,12 @@ end
 #TODO: assumed fields: kInd, expand_erms, expand_cache
 
 """
-    expandKArr(kGrid::ReducedKGrid, arr)
+    expandKArr(kGrid::KGrid, arr)
 
 Takes a kGrid `kGrid` and arbitrary data `arr` over a reduced BZ and returns an array with data over
 full BZ. This is mainly used before convolutions, since they require data over the full BZ.
 """
-function expandKArr(kG::ReducedKGrid{gT,D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {gT,T,D}
+function expandKArr(kG::KGrid{gT,D}, arr::AbstractArray{T, 1})::AbstractArray{T, D} where {gT,T,D}
     length(arr) != length(kG.kInd) && throw(ArgumentError("length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching"))
     res = similar(arr, gridshape(kG)...)
     expandKArr!(kG, res, arr)
@@ -103,7 +79,7 @@ end
 
 Inplace version of [`expandKArr`](@ref). The results are written to `kG.expand_cache`.
 """
-function expandKArr!(kG::ReducedKGrid, arr::Array{Complex{Float64}, 1})
+function expandKArr!(kG::KGrid, arr::Array{Complex{Float64}, 1})
     for (ri,perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds kG.expand_cache[p] = arr[ri]
@@ -116,7 +92,7 @@ end
 
 Inplace version of [`expandKArr`](@ref). The results are written to `res`.
 """
-function expandKArr!(kG::ReducedKGrid{gT,D}, res::AbstractArray{T,D}, arr::Array{T, 1}) where {gT,T,D}
+function expandKArr!(kG::KGrid{gT,D}, res::AbstractArray{T,D}, arr::Array{T, 1}) where {gT,T,D}
     for (ri,perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds res[p] = arr[ri]
@@ -139,7 +115,7 @@ function conv(kG::KGrid, arr1::AbstractArray{ComplexF64,1}, arr2::AbstractArray{
     return res
 end
 #TODO: only for testing, remove?
-#conv(kG::ReducedKGrid, arr1::AbstractArray, arr2::AbstractArray) = conv(kG, convert.(ComplexF64, arr1[:]), convert.(ComplexF64, arr2[:]))
+#conv(kG::KGrid, arr1::AbstractArray, arr2::AbstractArray) = conv(kG, convert.(ComplexF64, arr1[:]), convert.(ComplexF64, arr2[:]))
 
 """
     conv!(kG::KGrid, res::AbstractVector{ComplexF64}, arr1::AbstractVector{ComplexF64}, arr2::AbstractVector{ComplexF64})

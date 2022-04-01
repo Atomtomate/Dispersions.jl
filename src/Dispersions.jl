@@ -7,7 +7,7 @@ using ShiftedArrays
 using FastGaussQuadrature
 
 # general types
-export KGrid, FullKGrid, ReducedKGrid
+export KGrid
 
 # access functions
 export gridPoints, Nk, gridshape, dispersion
@@ -25,12 +25,13 @@ export kintegrate
 
 
 include("Types.jl")
+include("KGrid.jl")
 include("common.jl")
-include("SC.jl")
-include("FCC.jl")
+include("cP.jl")
+include("cF.jl")
 include("hexagonal.jl")
 include("BZIntegration.jl")
-include("IO_SC.jl")
+include("IO.jl")
 
 
 end

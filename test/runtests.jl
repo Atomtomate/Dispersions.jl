@@ -9,14 +9,14 @@ num_eps = 1e-8
 rng = MersenneTwister(0);
 
 include("./helper_functions.jl")
-@testset "SC" begin
+@testset "cP" begin
     include("./Types.jl")
-    include("./SC.jl")    
+    include("./cP.jl")    
     #include("./IO_SC.jl")    
 end
 
-@testset "FCC" begin
-    include("./FCC.jl")
+@testset "cF" begin
+    include("./cF.jl")
 end
 
 @testset "hexagonal" begin

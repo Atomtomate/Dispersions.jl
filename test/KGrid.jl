@@ -2,9 +2,9 @@ using Base.Iterators
 #TODO: test kvices/ifft
 
 @testset "gen_kGrid" begin
-    for NN in [4,6,8]
     gl = map(x-> gen_kGrid(x,NN), grid_list)
     for i in 1:length(gl)
+    for NN in [4,6,8]
         kG = gl[i]
         Di = grid_list_D[i]
         @test kG.Nk == NN^Di

@@ -16,24 +16,3 @@ using Base.Iterators
     #rr = abs.(conv(r64, convert.(ComplexF64,r64.ϵkGrid), convert.(ComplexF64,r64.ϵkGrid)) .- ( - r64.t .* r64.ϵkGrid))
     #@test maximum(rr) < 1e-10
 end
-
-@testset "reduce_expand" begin
-    for NN in 2:2:16
-        gr3 = Dispersions.gen_kGrid("fcc-1.3",NN, full=true)
-        gr3_r = Dispersions.reduceKGrid(gr3)
-        ek3 = reshape(gr3.ϵkGrid, (NN,NN,NN))
-        res_r3 = zeros(eltype(gr3.ϵkGrid), size(gr3_r.ϵkGrid)...) 
-        res_f3 = zeros(eltype(ek3), size(ek3)...) 
-        @test all(reduceKArr(gr3_r, ek3) .≈ gr3_r.ϵkGrid)
-        reduceKArr!(gr3_r, res_r3, ek3)
-        @test all(res_r3 .≈ gr3_r.ϵkGrid)
-        gr3_cut = cut_mirror(ek3)
-        @test all(map(x-> x in gr3.ϵkGrid, gr3_cut))
-        al = ceil(Int,NN/2)
-        gr3_pre_exp = zeros(size(ek3))
-        gr3_pre_exp[al:end,al:end,al:end] = gr3_cut
-        @test all(abs.(expandKArr(gr3_r, gr3_r.ϵkGrid) .- ek3) .< num_eps)
-        expandKArr!(gr3_r, convert.(Complex{Float64},gr3_r.ϵkGrid))
-        @test all(abs.(gr3_r.expand_cache .- convert.(Complex{Float64},ek3)) .< num_eps)
-    end
-end

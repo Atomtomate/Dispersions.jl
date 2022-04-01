@@ -1,7 +1,17 @@
 using FFTW
 include("helper_functions.jl")
-# TODO error test for interface functions
-# TODO: this needs loads of tests for different lattices
+
+@testset "reduce_expand" begin
+    for gr in grid_list
+        for NN in 2:2:8
+            kG = gen_kGrid(gr,4)
+            arr1 = reduceKArr(kG, randn(rng, ComplexF64, gridshape(kG)))
+            @test all(expandKArr(kG, arr1) .≈ expandKArr(kG, reduceKArr(kG, expandKArr(kG, arr1)))) # consistent?
+            #TODO: test expand disp and direct disp calc
+        end
+    end
+end
+
 @testset "convolutions" begin
     for gr in grid_list
         kG = gen_kGrid(gr,4)
@@ -22,7 +32,6 @@ include("helper_functions.jl")
         conv_res = conv(kG, reduceKArr(kG, arr1_sym), reduceKArr(kG, arr2_sym))
 
         @testset "$gr" begin
-            println(gr)
             @test all(conv_theo_res .≈ conv_naive_fft_def_res)      # naive convolution and conv. theorem match
             @test all(conv_naive_res .≈ conv_theo_res_2)
             @test all(expandKArr(kG,conv_res) .≈ conv_naive_res_2)
