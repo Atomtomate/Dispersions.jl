@@ -99,3 +99,7 @@ function naive_conv_fft_def(arr1::AbstractArray, arr2::AbstractArray)
     end
     return res
 end
+
+function fcc_dispersion(k::Tuple, t::Float64)
+    return -4t*(cos(k[1]/2) * cos(k[2]/2) + cos(k[1]/2) * cos(k[3]/2) + cos(k[2]/2) * cos(k[3]/2))
+end
