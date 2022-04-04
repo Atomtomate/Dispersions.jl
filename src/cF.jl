@@ -15,7 +15,6 @@ basis_transform(::Type{cF}, v::Tuple) =
 
 function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
-    ind = gen_sampling(cP, D, Ns)
     kMult = ones(length(ind))
     expand_perms = map(x -> [CartesianIndex{3}(x)], ind[:])
     return ind[:], kMult, expand_perms, kGrid[:]
@@ -29,7 +28,6 @@ gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where {T<:Real} = collect(
         kGrid,
     ),
 )
-conv_post(kG::KGrid{cF,3}, x::Array{T,3}) where {T<:Number} = reverse(x)[:]
 
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #

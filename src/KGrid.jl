@@ -24,8 +24,8 @@ struct KGrid{T <: KGridType, D}
     kInd::GridInd
     kMult::Array{Float64,1}
     expand_perms::Vector{Vector{CartesianIndex{D}}}
-    expand_cache::Array{ComplexF64,D}
-    conv_cache::Array{ComplexF64,D}
+    cache1::Array{ComplexF64,D}
+    cache2::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
     function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64; fftw_plan=nothing) where T<:KGridType
         sampling = gen_sampling(GT, D, Ns)
@@ -33,7 +33,7 @@ struct KGrid{T <: KGridType, D}
         kInd, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t)
         gs = repeat([Ns], D)
-        fftw_plan = fftw_plan === nothing ? plan_fft(Array{ComplexF64,D}(undef, gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        fftw_plan = fftw_plan === nothing ? plan_fft!(Array{ComplexF64,D}(undef, gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Ns^D, Ns, t, kGrid, ϵkGrid, kInd, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
     end

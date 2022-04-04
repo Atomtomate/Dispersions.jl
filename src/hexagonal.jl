@@ -19,7 +19,6 @@ function reduce_KGrid(::Type{p6m}, D::Int, Ns::Int, kGrid::AbstractArray)
 end
 
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
-conv_post(kG::KGrid{p6m, 2}, x::Array{T,2}) where {T <: Number} = reverse(x)[:]
 
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #

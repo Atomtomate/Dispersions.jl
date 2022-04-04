@@ -49,7 +49,7 @@ dispersion(kG::T) where {T<:KGrid} = kG.ϵkGrid
 Takes a kGrid `kGrid` and arbitrary data `arr` over a full BZ and returns an array with data over fully irreducible
 BZ. This is mainly used after convolutions, since they require data over the full BZ.
 """
-function reduceKArr(kG::KGrid{gT,D}, arr::AbstractArray{T,D}) where {gT,T,D}
+function reduceKArr(kG::KGrid{gT,D}, arr::AbstractArray{T,D}) where {gT <: KGridType,T,D}
     res = similar(arr, length(kG.kInd))
     reduceKArr!(kG, res, arr)
     return res
@@ -65,14 +65,12 @@ function reduceKArr!(
     kG::KGrid{gT,D},
     res::AbstractArray{T,1},
     arr::AbstractArray{T,D},
-) where {gT,T,D}
+) where {gT <: KGridType,T,D}
     for (i, ki) in enumerate(kG.kInd)
         @inbounds res[i] = arr[ki...]
     end
 end
 
-
-#TODO: assumed fields: kInd, expand_erms, expand_cache
 
 """
     expandKArr(kGrid::KGrid, arr)
@@ -83,7 +81,7 @@ full BZ. This is mainly used before convolutions, since they require data over t
 function expandKArr(
     kG::KGrid{gT,D},
     arr::AbstractArray{T,1},
-)::AbstractArray{T,D} where {gT,T,D}
+)::AbstractArray{T,D} where {gT <: KGridType,T,D}
     length(arr) != length(kG.kInd) && throw(
         ArgumentError(
             "length of k grid ($(length(kG.kInd))) and argument ($(length(arr))) not matching",
@@ -116,7 +114,7 @@ function expandKArr!(
     kG::KGrid{gT,D},
     res::AbstractArray{T,D},
     arr::Array{T,1},
-) where {gT,T,D}
+) where {gT <: KGridType,T,D}
     for (ri, perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds res[p] = arr[ri]
@@ -158,15 +156,12 @@ function conv!(
 )
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
     gs = gridshape(kG)
-    arr1_fft = fft(expandKArr(kG, arr1))
-    arr2_fft = fft(reverse(expandKArr(kG, arr2)))
-    conv_fft!(kG, res, arr1_fft, arr2_fft)
-    #= TODO: use cache instead of new memory
-    res_v = reshape(view(res,:),gs)
-    AbstractFFTs.mul!(res_v, kG.fftw_plan, reshape(view(arr1,:),gs))
-    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, reverse(reshape(view(arr2,:),gs)))
-    conv_fft!(kG, res, res, kG.fft_cache)
-    =#
+
+    expandKArr!(kG, kG.cache2, arr2)
+    reverse!(kG.cache2)
+    kG.fftw_plan * kG.cache2
+
+    conv_fft1!(kG, res, arr1, kG.cache2)
 end
 
 """
@@ -198,12 +193,10 @@ function conv_fft1!(
     arr2::AbstractArray{ComplexF64},
 )
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    arr1_fft = fft(expandKArr(kG, arr1))
-    conv_fft!(kG, res, arr1_fft, arr2_fft)
-    #= TODO: use cache
-    AbstractFFTs.mul!(kG.fft_cache, kG.fftw_plan, reshape(view(arr1,:),gridshape(kG)))
-    conv_fft!(kG, view(res,:), view(kG.fft_cache,:), view(arr2,:))
-    =#
+    expandKArr!(kG, kG.cache1, arr1)
+    kG.fftw_plan * kG.cache1
+
+    conv_fft!(kG, res, kG.cache1, arr2)
 end
 
 """
@@ -220,8 +213,6 @@ function conv_fft(
     Nk(kG) == 1 && return arr1 .* arr2
     res = Array{ComplexF64,1}(undef, length(kG.kMult))
     conv_fft!(kG, res, arr1, arr2)
-    # TODO: better wayt to determine shape res = similar(arr2)
-    #conv_fft!(kG, view(res,:), view(arr1,:), view(arr2,:))
     return res
 end
 
@@ -238,14 +229,36 @@ function conv_fft!(
     arr2::AbstractArray{ComplexF64},
 )
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    res[:] = conv_post(kG, ifft(arr1 .* arr2)) ./ Nk(kG)
-    #println(tmp)
-    #= TODO: use cache
-    res_v = reshape(view(res,:),gridshape(kG))
-    for i in eachindex(kG.fft_cache)
-        @inbounds kG.fft_cache[i] = arr1[i] .* arr2[i]
+
+    for i in eachindex(kG.cache1)
+        @inbounds kG.cache1[i] = arr1[i] * arr2[i]
     end
-    AbstractFFTs.ldiv!(res_v, kG.fftw_plan, kG.fft_cache)
-    res[:] = res_v[:] ./ Nk(kG)
-    =#
+    kG.fftw_plan \ kG.cache1
+    conv_post!(kG, res, kG.cache1)
+end
+
+
+# ------------------------------ Auxiliary Convolution Functions -----------------------------
+"""
+    conv_post(kG::KGrid, x::Array{T,D})
+
+Post convolution steps i.e. reversing the result. Some lattice typs may overload this, depending
+on the sample points. See cP.jl for an example.
+"""
+function conv_post(kG::KGrid, x::Array{T,D}) where {D,T}
+    res = Array{T,1}(undef, length(kG.kMult)) 
+    conv_post!(kG, res, x)
+end
+
+"""
+    conv_post!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
+
+Inplace version of [`conv_post`](@ref). Warning: `res` should not alias `kG.cache2` as some
+implementations may use this cache without explicitly checking for pointer aliases. 
+"""
+function conv_post!(kG::KGrid, res::Array{T,1}, x::Array{T,D}) where {D,T} 
+    reverse!(x)
+    reduceKArr!(kG, res, x)
+    norm = Nk(kG)
+    res[:] = res ./ norm
 end
