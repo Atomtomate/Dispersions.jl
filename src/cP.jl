@@ -13,7 +13,7 @@ gen_sampling(::Type{cP}, D::Int, Ns::Int) =
 basis_transform(::Type{cP}, v::Tuple) = v
 
 function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
-    (Ns % 2 != 0) && throw(
+    (Ns % 2 != 0 && Ns != 1) && throw(
         ArgumentError(
             "Cannot reduce simple cubic lattice with uneven number of samplng points!",
         ),
