@@ -225,9 +225,9 @@ Inplace version of [`conv_fft`](@ref).
 function conv_fft!(
     kG::KGrid,
     res::AbstractArray{ComplexF64,1},
-    arr1::AbstractArray{ComplexF64},
-    arr2::AbstractArray{ComplexF64},
-)
+    arr1::Array{ComplexF64,D},
+    arr2::Array{ComplexF64,D},
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
 
     for i in eachindex(kG.cache1)
@@ -256,7 +256,7 @@ end
 Inplace version of [`conv_post`](@ref). Warning: `res` should not alias `kG.cache2` as some
 implementations may use this cache without explicitly checking for pointer aliases. 
 """
-function conv_post!(kG::KGrid, res::Array{T,1}, x::Array{T,D}) where {D,T} 
+function conv_post!(kG::KGrid, res::AbstractArray{T,1}, x::Array{T,D}) where {D,T} 
     reverse!(x)
     reduceKArr!(kG, res, x)
     norm = Nk(kG)
