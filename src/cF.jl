@@ -23,8 +23,8 @@ end
 gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where {T<:Real} = collect(
     map(
         kᵢ ->
-            -2t*
-            (cos(kᵢ[1]) * cos(kᵢ[2]) + cos(kᵢ[1]) * cos(kᵢ[3]) + cos(kᵢ[2]) * cos(kᵢ[3])),
+            -4t*
+            (cos(kᵢ[1]/2) * cos(kᵢ[2]/2) + cos(kᵢ[1]/2) * cos(kᵢ[3]/2) + cos(kᵢ[2]/2) * cos(kᵢ[3]/2)),
         kGrid,
     ),
 )

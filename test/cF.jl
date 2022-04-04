@@ -12,7 +12,7 @@ using Base.Iterators
     @test_throws ArgumentError expandKArr(r64, [1,2,3,4])
     @test all(gridshape(r8) .== (2,2,2))
     @test isapprox(kintegrate(r64, r64.ϵkGrid), 0.0, atol=num_eps)
-    @test isapprox(kintegrate(r64, r64.ϵkGrid .* r64.ϵkGrid), 6 * r64.t^2, atol=num_eps)
+    @test isapprox(kintegrate(r64, r64.ϵkGrid .* r64.ϵkGrid), 12 * r64.t^2, atol=num_eps)
     #rr = abs.(conv(r64, convert.(ComplexF64,r64.ϵkGrid), convert.(ComplexF64,r64.ϵkGrid)) .- ( - r64.t .* r64.ϵkGrid))
     #@test maximum(rr) < 1e-10
 end
