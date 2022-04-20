@@ -37,28 +37,14 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
         ind_red[i] = CartesianIndex(ind[ti])
         grid_red[i] = kGrid[ti]
     end
+    ind_red_conv = CartesianIndex.(circshift(reverse(ind), floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1)[index]); # indices after conv
 
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)
-    return index, kMult, expand_perms, grid_red
+    return index, ind_red_conv, kMult, expand_perms, grid_red
 end
 
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where {T<:Real} =
     collect(map(kᵢ -> -2 * t * sum(cos.(kᵢ)), kGrid))
-
-"""
-    conv_post!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
-
-Inplace version of [`conv_post`](@ref). Warning: `res` cannot alias kG.cache2!
-"""
-function conv_post!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
-    reverse!(x)
-    ShiftedArrays.circshift!(kG.cache2, x, floor.(Int, gridshape(kG) ./ 2) .- 1)
-    reduceKArr!(kG, res, kG.cache2)
-    norm = Nk(kG)
-    res[:] = res ./ norm
-end
-#TODO: optimimize this, i.e. write reduce_from_conv function
-#      Description: reverse is part of rewriting the usual to our convolution definition. The circshift rotates the q= 0 point back into the middle of the array (since we sample from -pi to pi for cP.
 
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #

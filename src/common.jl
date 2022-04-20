@@ -66,9 +66,7 @@ function reduceKArr!(
     res::AbstractArray{T,1},
     arr::AbstractArray{T,D},
 ) where {gT <: KGridType,T,D}
-    for (i, ki) in enumerate(kG.kInd)
-        @inbounds res[i] = arr[ki]
-    end
+    @inbounds res[:] = arr[kG.kInd]
 end
 
 
@@ -257,8 +255,6 @@ Inplace version of [`conv_post`](@ref). Warning: `res` should not alias `kG.cach
 implementations may use this cache without explicitly checking for pointer aliases. 
 """
 function conv_post!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T}) where T 
-    reverse!(x)
-    reduceKArr!(kG, res, x)
     norm = Nk(kG)
-    res[:] = res ./ norm
+    res[:] = x[kG.kInd_conv] ./ norm
 end
