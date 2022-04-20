@@ -15,7 +15,7 @@ function reduce_KGrid(::Type{p6m}, D::Int, Ns::Int, kGrid::AbstractArray)
     ind = collect(Base.product([1:Ns for Di in 1:2]...))
     kMult = ones(length(ind))
     expand_perms = map(x -> [CartesianIndex{2}(x)],ind[:])
-    return ind[:], kMult, expand_perms, kGrid[:]
+    return CartesianIndex.(ind[:]), kMult, expand_perms, kGrid[:]
 end
 
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))

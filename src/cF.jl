@@ -17,7 +17,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
     kMult = ones(length(ind))
     expand_perms = map(x -> [CartesianIndex{3}(x)], ind[:])
-    return ind[:], kMult, expand_perms, kGrid[:]
+    return CartesianIndex.(ind[:]), kMult, expand_perms, kGrid[:]
 end
 
 gen_ϵkGrid(::Type{cF}, kGrid::GridPoints, t::T) where {T<:Real} = collect(

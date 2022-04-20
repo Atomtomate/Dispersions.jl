@@ -3,7 +3,7 @@
 # ================================================================================ #
 
 # --------------------------------- convenience defs -------------------------------
-const GridInd{D} = Vector{NTuple{D,Int}}
+const GridInd{D} = Vector{CartesianIndex{D}}
 const GridPoints{D} = Vector{NTuple{D,Float64}}
 const GridDisp = Array{Float64,1}
 

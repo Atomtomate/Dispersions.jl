@@ -67,7 +67,7 @@ function reduceKArr!(
     arr::AbstractArray{T,D},
 ) where {gT <: KGridType,T,D}
     for (i, ki) in enumerate(kG.kInd)
-        @inbounds res[i] = arr[ki...]
+        @inbounds res[i] = arr[ki]
     end
 end
 

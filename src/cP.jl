@@ -22,9 +22,9 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
     ll = floor(Int, size(kGrid, 1) / 2 + 1) - 1
     la = ceil(Int, Ns / 2)
     index = if D == 2
-        [(x, y) for x = la:ll+la for y = la:x]
+        [CartesianIndex(x, y) for x = la:ll+la for y = la:x]
     elseif D == 3
-        [(x, y, z) for x = la:ll+la for y = la:x for z = la:y]
+        [CartesianIndex(x, y, z) for x = la:ll+la for y = la:x for z = la:y]
     else
         error("cP for D ∉ [2,3] not implemented yet!")
     end
@@ -34,8 +34,8 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
 
     # Compute reduced arrays
     for (i, ti) in enumerate(index)
-        ind_red[i] = ind[ti...]
-        grid_red[i] = kGrid[ti...]
+        ind_red[i] = CartesianIndex(ind[ti])
+        grid_red[i] = kGrid[ti]
     end
 
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)
