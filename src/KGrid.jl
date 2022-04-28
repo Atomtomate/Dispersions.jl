@@ -34,7 +34,7 @@ struct KGrid{T <: KGridType, D}
         kInd, kInd_conv, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t)
         gs = repeat([Ns], D)
-        fftw_plan = fftw_plan === nothing ? plan_fft!(Array{ComplexF64,D}(undef, gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Ns^D, Ns, t, kGrid, ϵkGrid, kInd, kInd_conv, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
     end

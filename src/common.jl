@@ -235,6 +235,82 @@ function conv_fft!(
     conv_post!(kG, res, kG.cache1)
 end
 
+# ===== no plan functions. TODO: replace definition with macro + find a way to serialize plans
+function conv_noPlan(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64,1},
+)
+    Nk(kG) == 1 && return arr1 .* arr2
+    res = similar(arr2)
+    conv_noPlan!(kG, res, arr1, arr2)
+    return res
+end
+
+function conv_noPlan!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64,1},
+)
+    Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
+    gs = gridshape(kG)
+
+    expandKArr!(kG, kG.cache2, arr2)
+    reverse!(kG.cache2)
+    fft!(kG.cache2)
+
+    conv_fft1!(kG, res, arr1, kG.cache2)
+end
+
+function conv_fft1_noPlan(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+)
+    Nk(kG) == 1 && return arr1 .* arr2
+    res = similar(arr2)
+    conv_fft1!(kG, res, arr1, arr2)
+    return res
+end
+function conv_fft1_noPlan!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64,1},
+    arr2::AbstractArray{ComplexF64},
+)
+    Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
+    expandKArr!(kG, kG.cache1, arr1)
+    fft!(kG.cache1)
+
+    conv_fft_noPlan!(kG, res, kG.cache1, arr2)
+end
+
+function conv_fft_noPlan(
+    kG::KGrid,
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+)
+    Nk(kG) == 1 && return arr1 .* arr2
+    res = Array{ComplexF64,1}(undef, length(kG.kMult))
+    conv_fft_noPlan!(kG, res, arr1, arr2)
+    return res
+end
+
+function conv_fft_noPlan!(
+    kG::KGrid,
+    res::AbstractArray{ComplexF64,1},
+    arr1::AbstractArray{ComplexF64},
+    arr2::AbstractArray{ComplexF64},
+) where D
+    Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
+
+    for i in eachindex(kG.cache1)
+        @inbounds kG.cache1[i] = arr1[i] * arr2[i]
+    end
+    ifft!(kG.cache1)
+    conv_post!(kG, res, kG.cache1)
+end
 
 # ------------------------------ Auxiliary Convolution Functions -----------------------------
 """

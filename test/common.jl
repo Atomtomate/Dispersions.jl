@@ -34,11 +34,13 @@ end
         conv_naive_res_2 =
             Dispersions.conv_sample_post(kG, naive_conv(arr1_sym, arr2_sym) ./ Nk(kG))
         conv_res = conv(kG, reduceKArr(kG, arr1_sym), reduceKArr(kG, arr2_sym))
+        conv_noPlan_res = conv_noPlan(kG, reduceKArr(kG, arr1_sym), reduceKArr(kG, arr2_sym))
 
         @testset "$gr" begin
             @test all(conv_theo_res .≈ conv_naive_fft_def_res)      # naive convolution and conv. theorem match
             @test all(conv_naive_res .≈ conv_theo_res_2)
             @test all(expandKArr(kG, conv_res) .≈ conv_naive_res_2)
+            @test all(expandKArr(kG, conv_noPlan_res) .≈ conv_naive_res_2)
             @test all(reduceKArr(kG, expandKArr(kG, conv_res)) .≈ conv_res)     # is symmetry preserved?
         end
     end
