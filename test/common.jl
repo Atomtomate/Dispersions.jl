@@ -10,6 +10,9 @@ include("helper_functions.jl")
                 expandKArr(kG, arr1) .≈
                 expandKArr(kG, reduceKArr(kG, expandKArr(kG, arr1))),
             ) # consistent?
+            if (gr == "3Dsc-1.3"||gr == "fcc-1.4")
+                @test sum(kG.kMult) == 4^3
+            end
             #TODO: test expand disp and direct disp calc
         end
     end

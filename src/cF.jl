@@ -22,8 +22,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     fsymm(kInd) = fccSymmetries(kInd,Ns)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
     parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],12)));
-    kmap, ind_red = minimal_set(parents, vec(ind));
-    println(ind_red)
+    kmap, ind_red = minimal_set(parents, vec(ind))
     grid_red = Array{NTuple{3,Float64},1}(undef,length(ind_red))
     for (i,indi) in enumerate(ind_red)
         grid_red[i] = kGrid[CartesianIndex(indi)]
@@ -91,10 +90,10 @@ end
 
 function fccSymmetries(kind,Ns)    
     symm = Array{NTuple{3,Int64},1}(undef, 12)
-    perms = collect(permutations(kind.-1))
+    perms = collect(permutations(kind .-1))
     for i in 1:length(perms)
-        symm[2*(i-1)+1] = Tuple(perms[i] .+ 1)
-        symm[2*(i-1)+2] = Tuple(((Ns-1) .- perms[i]) .+1)
+        symm[2*(i-1)+1] = Tuple(perms[i] .+1)
+        symm[2*(i-1)+2] = Tuple((mod.(Ns .- perms[i],Ns)) .+1)
     end
     return unique(symm)[:]
 end
