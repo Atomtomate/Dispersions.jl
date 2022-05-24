@@ -3,8 +3,8 @@ include("helper_functions.jl")
 
 @testset "dispersion" begin
     r8 = gen_kGrid("fcc-1.2",2)
-    r64 = gen_kGrid("fcc-1.0",4)
-    r1000 = gen_kGrid("fcc-1.3",10)
+    r64 = gen_kGrid("fcc-1.1",4)
+    r1000 = gen_kGrid("fcc-1.3",6)
     indTest = reduceKArr(r8, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
     gridTest = reduceKArr(r8, reshape([(0, 0, 0) (-π, π, π) (π, -π, π) (0, 0, 2π) (π, π, -π) (0, 2π, 0) (2π, 0, 0) (π, π, π)], (2,2,2)))
     
