@@ -33,11 +33,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
         kMult[i] = length(fsymm(ind_red[i]))
         expand_perms[i] = CartesianIndex.(fsymm(ind_red[i]))
     end
-    #ind = collect(Base.product([1:Ns for Di = 1:3]...))
-    #kMult = ones(length(ind))
-    #expand_perms = map(x -> [CartesianIndex{3}(x)], ind[:])
-    #red_map = CartesianIndex.(ind[:])
-    red_conv_map = CartesianIndex.(reverse(ind_red))
+    red_conv_map = CartesianIndex.(reverse(ind)[CartesianIndex.(ind_red)])
     return CartesianIndex.(ind_red), red_conv_map, kMult, expand_perms, grid_red
 end
 

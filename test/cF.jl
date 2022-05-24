@@ -11,10 +11,11 @@ include("helper_functions.jl")
     for kG in [r8,r64]
         eps_k = expandKArr(kG,kG.ϵkGrid)
         full_k_grid = expandKArr(kG,kG.kGrid)
-        #=comp_disp_ekgrid = falses((gridshape(kG)...,gridshape(kG)...))
-        for k in CartesianIndices(full_k_grid)
+        comp_disp_ekgrid = falses((gridshape(kG)...,gridshape(kG)...))
+        #=for k in CartesianIndices(full_k_grid)
             for q in CartesianIndices(full_k_grid)
                 comp_disp_ekgrid[k,q] = isapprox(fcc_dispersion(full_k_grid[k] .+ full_k_grid[q],kG.t), eps_k[mod(k[1]+q[1]-2,kG.Ns)+1,mod(k[2]+q[2]-2,kG.Ns)+1,mod(k[3]+q[3]-2,kG.Ns)+1],atol=num_eps)
+                #println(string(comp_disp_ekgrid[k,q])*" Disp = "*string(fcc_dispersion(full_k_grid[k] .+ full_k_grid[q],kG.t))*" EpsGrid = "*string(eps_k[mod(k[1]+q[1]-2,kG.Ns)+1,mod(k[2]+q[2]-2,kG.Ns)+1,mod(k[3]+q[3]-2,kG.Ns)+1])*" k="*string(full_k_grid[k])*" q="*string(full_k_grid[q]))
             end
         end
         @test all(comp_disp_ekgrid)=#
