@@ -10,6 +10,9 @@ include("helper_functions.jl")
                 expandKArr(kG, arr1) .≈
                 expandKArr(kG, reduceKArr(kG, expandKArr(kG, arr1))),
             ) # consistent?
+            if (gr == "3Dsc-1.3"||gr == "fcc-1.4")
+                @test sum(kG.kMult) == 4^3
+            end
             #TODO: test expand disp and direct disp calc
         end
     end
@@ -39,7 +42,7 @@ end
         @testset "$gr" begin
             @test all(conv_theo_res .≈ conv_naive_fft_def_res)      # naive convolution and conv. theorem match
             @test all(conv_naive_res .≈ conv_theo_res_2)
-            @test all(expandKArr(kG, conv_res) .≈ conv_naive_res_2)
+            @test all(isapprox.(expandKArr(kG, conv_res), conv_naive_res_2, atol = num_eps))
             @test all(expandKArr(kG, conv_noPlan_res) .≈ conv_naive_res_2)
             @test all(reduceKArr(kG, expandKArr(kG, conv_res)) .≈ conv_res)     # is symmetry preserved?
         end
