@@ -74,4 +74,15 @@ function gen_kGrid(kg::String, Ns::Int)
     end
 end
 
-
+function gen_shifted_ϵkGrid(kg::kGrid,shift::NTuple)  
+    D = length(kg.kGrid[1])
+    if D != length(shift)
+        throw(ArgumentError("Grid dimension differs from shift dimension!"))
+    else
+        shifted_kgrid = Vector{NTuple{D,Float64}}(undef,length(kg.kGrid))
+        for (i,k) in enumerate(kg.kGrid)
+            shifted_kgrid[i] = k .+ shift
+        end
+        return kg.gen_ϵkGrid(shifted_kgrid,kg.t)
+    end
+end
