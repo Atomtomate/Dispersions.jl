@@ -21,47 +21,14 @@ function reduce_KGrid(::Type{cPnn}, D::Int, Ns::Int, kGrid::AbstractArray)
     return red_map, red_conv_map, kMult, expand_perms, kGrid[:]
 end
 
-gen_ϵkGrid(::Type{cPnn}, kGrid::GridPoints, t::T) where {T<:Real} =
-    collect(map(kᵢ -> -2 * t * sum(cos.(kᵢ)), kGrid))
+# 10.1103/PhysRevLett.87.047003
+gen_ϵkGrid(::Type{cPnn}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real} =
+collect(map(kᵢ -> -2 * t   * sum(cos.(kᵢ)) 
+                  +4 * tp  * cos(kᵢ[1])*cos(kᵢ[2])
+                  -2 * tpp * (cos(2*kᵢ[1])+cos(2*kᵢ[2]))
+            , kGrid))
 
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #
 # -------------------------------------------------------------------------------- #
-
-conv_sample_post(kG::KGrid{cP,D}, x) where {D} =
-    ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .- 1)
-#TODO: this somehow works when not doing the reverse on the second input. We should find out why, this makes the convolution a lot faster
-conv_post_old(kG::KGrid{cP,D}, x::Array{T,D}) where {D,T<:Number} =
-    reduceKArr(kG, ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1))
-
-function build_expand_mapping_cP(D::Int, Ns::Int, ind_red::Array)
-    expand_perms = Vector{Vector{CartesianIndex{D}}}(undef, length(ind_red))
-    kMult = Array{Int,1}(undef, length(ind_red))
-
-    mirror_list = Array{NTuple{D,Int},1}()
-   for i = 1:D
-        push!(
-            mirror_list,
-            map(
-                x -> tuple((x)...),
-                unique(permutations([(j <= i) ? Ns : 0 for j = 1:D])),
-            )...,
-        )
-    end
-    #  - Expand mapping
-    for (ri, redInd) in enumerate(ind_red)
-        perms = unique(permutations(redInd))
-        expand_perms[ri] = Vector{CartesianIndex{D}}()
-        for (ip, p) in enumerate(perms)
-            push!(expand_perms[ri], CartesianIndex(p...))
-            for mi in mirror_list
-                if all(abs.(mi .- p) .> 0)
-                    push!(expand_perms[ri], CartesianIndex(abs.(mi .- p)...))
-                end
-            end
-        end
-        expand_perms[ri] = unique(expand_perms[ri])
-        kMult[ri] = length(expand_perms[ri])
-    end
-    return kMult, expand_perms
-end
+conv_sample_post(kG::KGrid{cPnn, 2}, x) = x
