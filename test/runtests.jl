@@ -15,6 +15,10 @@ include("./helper_functions.jl")
     #include("./IO_SC.jl")    
 end
 
+@testset "cPnn" begin
+    include("./cPnn.jl")
+end
+
 @testset "cF" begin
     include("./cF.jl")
 end

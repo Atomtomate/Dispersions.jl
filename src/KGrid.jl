@@ -6,6 +6,7 @@ Fields
 - **`Nk`**      : `Int`, Number of total k-points
 - **`Ns`**      : `Int`, Number of sampling points per dimension
 - **`t`**       : `Float64`, hopping parameter
+- **`tp`**      : `Float64`, hopping parameter, next nearest neighbor
 - **`kGrid`**   : `Vector{NTuple{D,Float64}}`, vector of k-points. Each element is a D-tuple
 - **`ϵkGrid`**  : `Vector{Float64}`, Dispersion relation
 - **`kInd`**    : `Vector{NTuple{D,Int}}`, vector of indices mapping from the full to reduced lattice.
@@ -19,6 +20,7 @@ struct KGrid{T <: KGridType, D}
     Nk::Int
     Ns::Int
     t::Float64
+    tp::Float64
     kGrid::GridPoints
     ϵkGrid::GridDisp
     kInd::GridInd
@@ -28,14 +30,14 @@ struct KGrid{T <: KGridType, D}
     cache1::Array{ComplexF64,D}
     cache2::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
-    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64; fftw_plan=nothing) where T<:KGridType
+    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64; fftw_plan=nothing) where T<:KGridType
         sampling = gen_sampling(GT, D, Ns)
         kGrid_f = map(v -> basis_transform(GT, v), sampling)
         kInd, kInd_conv, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
-        ϵkGrid =  gen_ϵkGrid(GT, kGrid, t)
+        ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp)
         gs = repeat([Ns], D)
         fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
-        new{GT,D}(Ns^D, Ns, t, kGrid, ϵkGrid, kInd, kInd_conv, kMult, expand_perms,
+        new{GT,D}(Ns^D, Ns, t, tp, kGrid, ϵkGrid, kInd, kInd_conv, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
     end
 end
@@ -62,13 +64,15 @@ function gen_kGrid(kg::String, Ns::Int)
     gt_s = lowercase(data[1])
     t = parse(Float64, data[2])
     if gt_s == "3dsc" || gt_s == "3dcp"
-        KGrid(cP, 3, Ns, t)
+        KGrid(cP, 3, Ns, t, 0.0)
+    elseif gt_s == "3dscNN"
+        KGrid(cP, 2, Ns, t, 0.0)
     elseif gt_s == "2dsc" || gt_s == "2dcp"
-        KGrid(cP, 2, Ns, t)
+        KGrid(cP, 2, Ns, t, 0.0)
     elseif gt_s == "fcc" || gt_s == "cf"
-        KGrid(cF, 3, Ns, t)
+        KGrid(cF, 3, Ns, t, 0.0)
     elseif gt_s == "p6m"
-        KGrid(p6m, 2, Ns, t)
+        KGrid(p6m, 2, Ns, t, 0.0)
     else
         throw(ArgumentError("Unkown grid type"))
     end
