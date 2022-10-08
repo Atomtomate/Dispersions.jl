@@ -5,6 +5,7 @@ using AbstractFFTs, FFTW
 using LinearAlgebra
 using ShiftedArrays
 using FastGaussQuadrature
+using EquivalenceClassesConstructor
 
 # general types
 export KGrid
