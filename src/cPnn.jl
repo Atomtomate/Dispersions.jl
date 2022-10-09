@@ -23,9 +23,9 @@ end
 
 # 10.1103/PhysRevLett.87.047003
 gen_ϵkGrid(::Type{cPnn}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real} =
-collect(map(kᵢ -> -2 * t   * sum(cos.(kᵢ)) 
-                  +4 * tp  * cos(kᵢ[1])*cos(kᵢ[2])
-                  -2 * tpp * (cos(2*kᵢ[1])+cos(2*kᵢ[2]))
+collect(map(kᵢ -> -2 * t   * sum(cos.(kᵢ)) +
+                  4 * tp  * cos(kᵢ[1])*cos(kᵢ[2]) - # TODO: np.einsum like impl. for 3D
+                  2 * tpp * sum(cos.(2 .* kᵢ))
             , kGrid))
 
 # -------------------------------------------------------------------------------- #

@@ -81,6 +81,7 @@ function gen_kGrid(kg::String, Ns::Int)
         tp = parse(Float64, data[3])
         gt_s = string(gt_s, "nn")
     elseif  length(data) == 4
+        tp = parse(Float64, data[3])
         tpp = parse(Float64, data[4])
         gt_s = string(gt_s, "nn")
     end
