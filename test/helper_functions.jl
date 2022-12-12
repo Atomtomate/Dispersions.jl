@@ -52,7 +52,7 @@ function reduce_old(kGrid)
 end
 
 # typical use case.
-function naive_bubble(fk) where {T}
+function naive_bubble(fk)
     ωn = 0
     νn = 0
     Σ_loc = 2.734962277113537 - 0.41638191263582125im

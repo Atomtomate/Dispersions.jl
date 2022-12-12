@@ -10,15 +10,11 @@ abstract type cPnn <: KGridType end
 
 gen_sampling(::Type{cPnn}, D::Int, Ns::Int) =
     Base.product([[(2 * π / Ns) * j - π for j = 1:Ns] for Di = 1:D]...)
+
 basis_transform(::Type{cPnn}, v::Tuple) = v
 
 function reduce_KGrid(::Type{cPnn}, D::Int, Ns::Int, kGrid::AbstractArray)
-    ind = collect(Base.product([1:Ns for Di in 1:2]...))
-    kMult = ones(length(ind))
-    expand_perms = map(x -> [CartesianIndex{2}(x)],ind[:])
-    red_map = CartesianIndex.(ind[:])
-    red_conv_map = reverse(red_map)
-    return red_map, red_conv_map, kMult, expand_perms, kGrid[:]
+    return reduce_KGrid(cP, D::Int, Ns::Int, kGrid::AbstractArray)
 end
 
 # 10.1103/PhysRevLett.87.047003
@@ -31,4 +27,8 @@ collect(map(kᵢ -> -2 * t   * sum(cos.(kᵢ)) +
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #
 # -------------------------------------------------------------------------------- #
-conv_sample_post(kG::KGrid{cPnn, 2}, x) = x
+conv_sample_post(kG::KGrid{cPnn, 2}, x) where {D} =
+    ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .- 1)
+#TODO: this somehow works when not doing the reverse on the second input. We should find out why, this makes the convolution a lot faster
+conv_post_old(kG::KGrid{cPnn, 2}, x::Array{T,D}) where {D,T<:Number} =
+    reduceKArr(kG, ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .+ 1))

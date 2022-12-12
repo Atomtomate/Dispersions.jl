@@ -10,6 +10,7 @@ abstract type cP <: KGridType end
 
 gen_sampling(::Type{cP}, D::Int, Ns::Int) =
     Base.product([[(2 * π / Ns) * j - π for j = 1:Ns] for Di = 1:D]...)
+
 basis_transform(::Type{cP}, v::Tuple) = v
 
 function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
