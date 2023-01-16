@@ -10,6 +10,7 @@ abstract type cP <: KGridType end
 
 gen_sampling(::Type{cP}, D::Int, Ns::Int) =
     Base.product([[(2 * π / Ns) * j - π for j = 1:Ns] for Di = 1:D]...)
+
 basis_transform(::Type{cP}, v::Tuple) = v
 
 function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
@@ -41,6 +42,13 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
 
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)
     return index, ind_red_conv, kMult, expand_perms, grid_red
+end
+
+function gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real}
+    if tp != 0.0 || tpp != 0.0
+        throw(ArgumentError("Dispersion of cP not implemented for non-zero next nearest neightbor hopping!"))
+    end
+    gen_ϵkGrid(cP, kGrid, t) 
 end
 
 gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where {T<:Real} =

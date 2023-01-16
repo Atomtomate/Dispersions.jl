@@ -20,6 +20,13 @@ function reduce_KGrid(::Type{p6m}, D::Int, Ns::Int, kGrid::AbstractArray)
     return red_map, red_conv_map, kMult, expand_perms, kGrid[:]
 end
 
+function gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real}
+    if tp != 0.0 || tpp != 0.0
+        throw(ArgumentError("Dispersion of p6m not implemented for non-zero next nearest neightbor hopping!"))
+    end
+    gen_ϵkGrid(p6m, kGrid, t) 
+end
+
 gen_ϵkGrid(::Type{p6m}, kGrid::GridPoints{2}, t::T1) where T1 <: Number = collect(map(kᵢ -> -2*t*(cos.(0.5*(kᵢ[1] + sqrt(3)*kᵢ[2])) + cos(0.5*(kᵢ[1] - sqrt(3)*kᵢ[2])) + cos(kᵢ[1])), kGrid))
 
 # -------------------------------------------------------------------------------- #
