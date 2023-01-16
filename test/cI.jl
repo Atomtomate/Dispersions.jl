@@ -24,8 +24,6 @@ include("helper_functions.jl")
     @test Nk(r8) == 2^3
     @test Nk(r64) == 4^3
     @test all(dispersion(r8) .≈ r8.ϵkGrid)
-	println(flatten(gridPoints(r8)))
-	println(flatten(gridTest))
     @test all(isapprox.(flatten(gridPoints(r8)), flatten(gridTest)))
     @test_throws ArgumentError expandKArr(r64, [1,2,3,4])
     @test all(gridshape(r8) .== (2,2,2))
