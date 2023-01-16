@@ -93,6 +93,8 @@ function gen_kGrid(kg::String, Ns::Int)
         KGrid(cP, 2, Ns, t, tp, tpp)
     elseif gt_s == "fcc" || gt_s == "cf"
         KGrid(cF, 3, Ns, t, tp, tpp)
+    elseif gt_s == "bcc" || gt_s == "ci"
+        KGrid(cI, 3, Ns, t)
     elseif gt_s == "p6m"
         KGrid(p6m, 2, Ns, t, tp, tpp)
     else
@@ -100,4 +102,15 @@ function gen_kGrid(kg::String, Ns::Int)
     end
 end
 
-
+function gen_shifted_ϵkGrid(kg::KGrid,shift::NTuple)  
+    D = length(kg.kGrid[1])
+    if D != length(shift)
+        throw(ArgumentError("Grid dimension differs from shift dimension!"))
+    else
+        shifted_kgrid = Vector{NTuple{D,Float64}}(undef,length(kg.kGrid))
+        for (i,k) in enumerate(kg.kGrid)
+            shifted_kgrid[i] = k .+ shift
+        end
+        return kg.gen_ϵkGrid(shifted_kgrid,kg.t)
+    end
+end
