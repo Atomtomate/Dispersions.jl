@@ -19,7 +19,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
             "BCC lattice only exists in 3 dimensions!",
         ),
     )
-    fsymm(kInd) = bccSymmetries(kInd,Ns)
+    fsymm(kInd) = bccSymmetries(kInd)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
     parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],12)));
     kmap, ind_red = minimal_set(parents, vec(ind))
