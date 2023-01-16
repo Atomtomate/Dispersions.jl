@@ -67,6 +67,8 @@ function gen_kGrid(kg::String, Ns::Int)
         KGrid(cP, 2, Ns, t)
     elseif gt_s == "fcc" || gt_s == "cf"
         KGrid(cF, 3, Ns, t)
+    elseif gt_s == "bcc" || gt_s == "ci"
+        KGrid(cI, 3, Ns, t)
     elseif gt_s == "p6m"
         KGrid(p6m, 2, Ns, t)
     else
