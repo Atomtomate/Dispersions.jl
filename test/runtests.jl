@@ -19,6 +19,10 @@ end
     include("./cF.jl")
 end
 
+@testset "cI" begin
+    include("./cI.jl")
+end
+
 @testset "hexagonal" begin
     include("./hexagonal.jl")
 end

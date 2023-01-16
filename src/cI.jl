@@ -13,7 +13,7 @@ gen_sampling(::Type{cI}, D::Int, Ns::Int) =
 basis_transform(::Type{cI}, v::Tuple) =
     Tuple([1.0 1.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0] * collect(v))
 
-function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
+function reduce_KGrid(::Type{cI}, D::Int, Ns::Int, kGrid::AbstractArray)
     (D != 3) && throw(
         ArgumentError(
             "BCC lattice only exists in 3 dimensions!",
@@ -85,5 +85,5 @@ function build_expand_mapping_cI(D::Int, Ns::Int, ind_red::Array)
 end
 
 function bccSymmetries(kind)
-    return collect(permutations(kind))[:]
+    return unique(Tuple.(collect(permutations(kind))))[:]
 end
