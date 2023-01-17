@@ -39,9 +39,9 @@ end
 
 function gen_ϵkGrid(::Type{cI}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real}
     if tp != 0.0 || tpp != 0.0
-        throw(ArgumentError("Dispersion of cF not implemented for non-zero next nearest neightbor hopping!"))
+        throw(ArgumentError("Dispersion of cI not implemented for non-zero next nearest neightbor hopping!"))
     end
-    gen_ϵkGrid(cF, kGrid, t) 
+    gen_ϵkGrid(cI, kGrid, t) 
 end
 
 gen_ϵkGrid(::Type{cI}, kGrid::GridPoints, t::T) where {T<:Real} = collect(

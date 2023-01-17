@@ -1,7 +1,9 @@
-push!(LOAD_PATH, "../src/")
-using Dispersions
 using Documenter
+using Pkg
+Pkg.activate(String(@__DIR__) * "/..")
+using Dispersions
 
+push!(LOAD_PATH, "../src/")
 makedocs(
     modules = [Dispersions],
     sitename = "Dispersions.jl",
