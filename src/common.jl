@@ -93,12 +93,12 @@ end
 """
     expandKArr!(kG, arr)
 
-Inplace version of [`expandKArr`](@ref). The results are written to `kG.expand_cache`.
+Inplace version of [`expandKArr`](@ref). The results are written to `kG.cache1`.
 """
 function expandKArr!(kG::KGrid, arr::Array{Complex{Float64},1})
     for (ri, perms) in enumerate(kG.expand_perms)
         @simd for p in perms
-            @inbounds kG.expand_cache[p] = arr[ri]
+            @inbounds kG.cache1[p] = arr[ri]
         end
     end
 end

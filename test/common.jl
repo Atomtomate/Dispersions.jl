@@ -5,7 +5,11 @@ include("helper_functions.jl")
     for gr in grid_list
         for NN = 2:2:8
             kG = gen_kGrid(gr, 4)
-            arr1 = reduceKArr(kG, randn(rng, ComplexF64, gridshape(kG)))
+            arr0 = randn(rng, ComplexF64, gridshape(kG))
+            arr1 = reduceKArr(kG, arr0)
+            arr1_exp = expandKArr(kG, arr1)
+            expandKArr!(kG, arr1)
+            @test all(kG.cache1 .≈ arr1_exp)
             @test all(
                 expandKArr(kG, arr1) .≈
                 expandKArr(kG, reduceKArr(kG, expandKArr(kG, arr1))),
