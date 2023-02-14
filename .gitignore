@@ -2,6 +2,5 @@
 *.jl.*.cov
 *.jl.mem
 *.DS_Store
-/Manifest.toml
 /test/coverage/Manifest.toml
 docs/build/
