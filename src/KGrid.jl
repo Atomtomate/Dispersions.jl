@@ -73,32 +73,31 @@ function gen_kGrid(kg::String, Ns::Int)
         data[i+1] = string("-",data[i+1])
     end
     deleteat!(data, ii)
-    #sp = findfirst("-", kg)[1]
-    #data = [kg[1:(sp-1)], kg[(sp+1):end]]
     gt_s = lowercase(data[1])
+    gt_s = replace(gt_s, "cp" => "sc", "cf" => "fcc", "ci" => "bcc")
     t = parse(Float64, data[2])
     if length(data) == 3
         tp = parse(Float64, data[3])
-        gt_s = string(gt_s, "nn")
+        gt_s = endswith(gt_s, "sc") ? string(gt_s, "nn") : gt_s
     elseif  length(data) == 4
         tp = parse(Float64, data[3])
         tpp = parse(Float64, data[4])
-        gt_s = string(gt_s, "nn")
+        gt_s = endswith(gt_s, "sc") ? string(gt_s, "nn") : gt_s
     end
-    if gt_s == "3dsc" || gt_s == "3dcp"
+    if gt_s == "3dsc"
         KGrid(cP, 3, Ns, t, tp, tpp)
     elseif gt_s == "2dscnn"
         KGrid(cPnn, 2, Ns, t, tp, tpp)
-    elseif gt_s == "2dsc" || gt_s == "2dcp"
+    elseif gt_s == "2dsc"
         KGrid(cP, 2, Ns, t, tp, tpp)
-    elseif gt_s == "fcc" || gt_s == "cf"
+    elseif gt_s == "fcc"
         KGrid(cF, 3, Ns, t, tp, tpp)
-    elseif gt_s == "bcc" || gt_s == "ci"
+    elseif gt_s == "bcc"
         KGrid(cI, 3, Ns, t, tp, tpp)
     elseif gt_s == "p6m"
         KGrid(p6m, 2, Ns, t, tp, tpp)
     else
-        throw(ArgumentError("Unkown grid type"))
+        throw(ArgumentError("Unkown grid type: $kg"))
     end
 end
 
