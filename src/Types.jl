@@ -5,7 +5,7 @@
 # --------------------------------- convenience defs -------------------------------
 const GridInd{D} = Vector{CartesianIndex{D}}
 const GridPoints{D} = Vector{NTuple{D,Float64}}
-const GridDisp = Array{Float64,1}
+const GridDisp = Union{Array{Float64,1}, Array{ComplexF64,3}}
 
 # ------------------------------------ Grids -----------------------------------
 abstract type KGridType end

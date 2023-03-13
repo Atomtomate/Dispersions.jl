@@ -225,7 +225,7 @@ function conv_fft!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64},
-) where D
+)
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
 
     for i in eachindex(kG.cache1)
@@ -302,7 +302,7 @@ function conv_fft_noPlan!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64},
-) where D
+)
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
 
     for i in eachindex(kG.cache1)

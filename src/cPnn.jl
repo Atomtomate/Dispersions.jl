@@ -27,7 +27,7 @@ collect(map(kᵢ -> -2 * t   * sum(cos.(kᵢ)) +
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #
 # -------------------------------------------------------------------------------- #
-conv_sample_post(kG::KGrid{cPnn, 2}, x) where {D} =
+conv_sample_post(kG::KGrid{cPnn, 2}, x) =
     ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .- 1)
 #TODO: this somehow works when not doing the reverse on the second input. We should find out why, this makes the convolution a lot faster
 conv_post_old(kG::KGrid{cPnn, 2}, x::Array{T,D}) where {D,T<:Number} =

@@ -20,7 +20,7 @@ export conv_noPlan,conv_noPlan!,conv_fft_noPlan,conv_fft_noPlan!,conv_fft1_noPla
     
 
 # grids 
-export gen_kGrid, cP, cPnn, cF, p6m
+export gen_kGrid, cP, cPnn, cF, p6m, cI, Hofstadter
 
 # sum types
 export KSum
@@ -33,6 +33,7 @@ include("KGrid.jl")
 include("common.jl")
 include("cP.jl")
 include("cPnn.jl")
+include("cPnn_mag.jl")
 include("cF.jl")
 include("cI.jl")
 include("hexagonal.jl")
