@@ -254,7 +254,6 @@ function conv_noPlan!(
     arr2::AbstractArray{ComplexF64,1},
 )
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    gs = gridshape(kG)
 
     expandKArr!(kG, kG.cache2, arr2)
     reverse!(kG.cache2)
@@ -333,4 +332,16 @@ implementations may use this cache without explicitly checking for pointer alias
 function conv_post!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T}) where T 
     norm = Nk(kG)
     res[:] = x[kG.kInd_conv] ./ norm
+end
+
+"""
+    conv_post_add!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
+
+Inplace version of [`conv_post`](@ref), but add values instead of replacing them.
+Warning: `res` should not alias `kG.cache2` as some
+implementations may use this cache without explicitly checking for pointer aliases. 
+"""
+function conv_post_add!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T}) where T 
+    norm = Nk(kG)
+    res[:] += x[kG.kInd_conv] ./ norm
 end
