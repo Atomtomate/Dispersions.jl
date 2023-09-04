@@ -30,8 +30,7 @@ Nk(kG) = kG.Nk
 """
     gridPoints(kG::T)::Int where T <: KGrid
 
-Number of grid points as integer value. `Nk` needs to be accessible for all implemented 
-full and reduced k grids.
+k vektors for the given grid. Elements of the irreducible part only.
 """
 gridPoints(kG::T) where {T<:KGrid} = kG.kGrid
 
