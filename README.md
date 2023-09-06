@@ -16,6 +16,7 @@ For an example usage see [LadderDGA.jl](https://github.com/Atomtomate/LadderDGA.
 - `Nk(kG)` returns the number of k points for the given grid. Example: `16` for a lattice generated with `genKGrid("2Dsc-1.0", 4)`
 - `gridPoints(kG)` returns the k vektors for the given grid.
 - `dispersion(kG)` returns the dispersion relation, i.e. an array of energy value for each point of `gridPoints(kG)`.
+- `grid_type(kG)`  returns the KGridType of the given grid without the dimension the grid lives on.
 
 - `conv(kG, arr1, arr2)` returns the convolution of the arrays `arr1` and `arr2` (any function evaluated on `kG`) on `kG`. This is usefull for the evaluation of expressions like G(q) = sum_k G(q)*G(k+q)
 - `conv_fft(kG, arr1, arr2)` and `conv_fft1(kG, arr1, arr2)` are helpers, used when `arr1` or both `arr1` and `arr2` are already fourier transformed (used for repeated evaluation with the same kernel).
