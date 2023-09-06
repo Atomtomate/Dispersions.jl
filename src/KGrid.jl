@@ -116,3 +116,12 @@ function gen_shifted_ϵkGrid(kg::KGrid,shift::NTuple)
         return kg.gen_ϵkGrid(shifted_kgrid,kg.t)
     end
 end
+
+"""
+    grid_type(kG::KGrid)
+
+    Maps the given grid onto its KGridType without the number of dimensions.
+"""
+function grid_type(kG::KGrid)
+    return typeof(kG).parameters[1]
+end
