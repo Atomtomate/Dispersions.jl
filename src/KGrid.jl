@@ -106,9 +106,9 @@ function gen_kGrid(kg::String, Ns::Int)
 end
 
 """
-    gen_shifted_ϵkGrid(kg::KGrid, q::NTuple)
+    ϵ_k_plus_q(kG::KGrid, q::NTuple)
     
-    Evaluates the dispersion relation on the given grid but shifted by a constant vector `q` in reciprocal space.
+    Evaluates the dispersion relation on the given reciprocal space but expanded and shifted by a constant vector `q`. The corresponding points in reciprocal space are given by `expandKArr(kG, gridPoints(kG))`.
 
     Returns:
     -------------
@@ -121,15 +121,12 @@ end
     - `kG`       : reciprocal lattice
     - **`q`**    : vector in reciprocal space
 """
-function gen_shifted_ϵkGrid(kG::KGrid, q::NTuple)  
-    D = grid_dimension(kG)
-    if D != length(q)
+function ϵ_k_plus_q(kG::KGrid, q::NTuple)
+    if grid_dimension(kG) != length(q)
         throw(ArgumentError("Grid dimension differs from shift dimension!"))
     else
-        k_plus_q = Vector{NTuple{D,Float64}}(undef,length(kG.kGrid))
-        for (i,k) in enumerate(kG.kGrid)
-            k_plus_q[i] = k .+ q
-        end
+        k_sampling_full  = expandKArr(kG, gridPoints(kG))[:]
+        k_plus_q = map(k -> k_sampling_full[k] .+ q, 1:length(k_sampling_full))
         return gen_ϵkGrid(grid_type(kG), k_plus_q, kG.t)
     end
 end
