@@ -54,3 +54,35 @@ end
     @test all(ϵk .≈ ϵkq)
 
 end
+
+@testset "grid properties" begin
+    # cF
+    fcc = gen_kGrid("fcc-1.2",2)
+    @test grid_dimension(fcc) == 3
+    @test grid_type(fcc) === cF
+    
+    # cI
+    bcc = gen_kGrid("bcc-1.2",2)
+    @test grid_dimension(bcc) == 3
+    @test grid_type(bcc) === cI
+
+    # cP
+    sc2d = gen_kGrid("2Dsc-1.3",2)
+    @test grid_dimension(sc2d) == 2
+    @test grid_type(sc2d) === cP
+    
+    sc3d = gen_kGrid("3Dsc-1.3",2)
+    @test grid_type(sc3d) === cP
+    @test grid_dimension(sc3d) == 3
+
+    # cPnn
+    sc2dnn = gen_kGrid("2Dsc-1.3--1.4-1.5",2)
+    @test grid_dimension(sc2dnn) == 2
+    @test grid_type(sc2dnn) === cPnn
+
+    # hexagonal
+    hexa = gen_kGrid("p6m-1.3", 2)
+    @test grid_type(hexa) === p6m
+    @test grid_dimension(hexa) == 2
+    
+end

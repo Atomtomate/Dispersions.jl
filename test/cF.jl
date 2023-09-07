@@ -21,7 +21,6 @@ include("helper_functions.jl")
         @test all(comp_disp_ekgrid)=#
     end
 
-    @test grid_type(r8) === cF
     @test Nk(r8) == 2^3
     @test Nk(r64) == 4^3
     @test all(dispersion(r8) .≈ r8.ϵkGrid)

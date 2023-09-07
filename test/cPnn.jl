@@ -4,7 +4,6 @@ using Base.Iterators
 @testset "2D" begin
     @test_throws ArgumentError gen_kGrid("2Dsc-1.3",3)
     r2 = gen_kGrid("2Dsc-1.3--1.4-1.5",2)
-    @test grid_type(r2) === cPnn
     @test r2.t ≈ 1.3
     @test r2.tp ≈ -1.4
     @test r2.tpp ≈ 1.5
