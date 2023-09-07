@@ -1,4 +1,5 @@
 #TODO: t/tp/tpp should be a vector
+# TODO: rename gen_shifted_ϵkGrid to something appropriate
 
 """
     KGrid{T <: KGridType, D}
@@ -104,16 +105,29 @@ function gen_kGrid(kg::String, Ns::Int)
     end
 end
 
-function gen_shifted_ϵkGrid(kg::KGrid,shift::NTuple)  
-    D = length(kg.kGrid[1])
-    if D != length(shift)
+"""
+    ϵ_k_plus_q(kG::KGrid, q::NTuple)
+    
+    Evaluates the dispersion relation on the given reciprocal space but expanded and shifted by a constant vector `q`. The corresponding points in reciprocal space are given by `expandKArr(kG, gridPoints(kG))`.
+
+    Returns:
+    -------------
+    ϵ(k+shift): `Vector{NTuple{D,Float64}}`, where D is the diemenion of the grid. Dispersion relation evaluated on the given grid but shifted by the the vector q.
+
+    ATTENTION: So far this function is tested for the simple cubic lattice only!
+    
+    Arguments:
+    -------------
+    - `kG`       : reciprocal lattice
+    - **`q`**    : vector in reciprocal space
+"""
+function ϵ_k_plus_q(kG::KGrid, q::NTuple)
+    if grid_dimension(kG) != length(q)
         throw(ArgumentError("Grid dimension differs from shift dimension!"))
     else
-        shifted_kgrid = Vector{NTuple{D,Float64}}(undef,length(kg.kGrid))
-        for (i,k) in enumerate(kg.kGrid)
-            shifted_kgrid[i] = k .+ shift
-        end
-        return kg.gen_ϵkGrid(shifted_kgrid,kg.t)
+        k_sampling_full  = expandKArr(kG, gridPoints(kG))[:]
+        k_plus_q = map(k -> k_sampling_full[k] .+ q, 1:length(k_sampling_full))
+        return gen_ϵkGrid(grid_type(kG), k_plus_q, kG.t)
     end
 end
 
@@ -121,7 +135,24 @@ end
     grid_type(kG::KGrid)
 
     Maps the given grid onto its KGridType without the number of dimensions.
+
+    Returns:
+    -------------
+    type : `KGridType`, type of the reciprocal lattice space, e.g. `cP`.
 """
 function grid_type(kG::KGrid)
     return typeof(kG).parameters[1]
+end
+
+"""
+    grid_dimension(kG::KGrid)
+
+    Maps the given grid onto its dimension.
+
+    Returns:
+    -------------
+    D : `Int`, dimension of the reciprocal lattice space.
+"""
+function grid_dimension(kG::KGrid)
+    return typeof(kG).parameters[2]
 end

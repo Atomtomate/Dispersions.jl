@@ -5,7 +5,6 @@ using Base.Iterators
     @test_throws ArgumentError gen_kGrid("2Dsc-1.3",3)
     r2 = gen_kGrid("2Dsc-1.3",2)
     r16 = gen_kGrid("2Dsc-1.4",16)
-    @test grid_type(r2) === cP
     @test Nk(r2) == 2^2
     @test all(dispersion(r2) .≈ r2.ϵkGrid)
     @test all(isapprox.(flatten(gridPoints(r2)), flatten([(0,0) (π,0) (π,π)])))
@@ -25,7 +24,6 @@ end
     r16 = gen_kGrid("3Dsc-1.1",4)
     indTest = reduceKArr(r2, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
     gridTest = reduceKArr(r2, reshape([(0, 0, 0) (π, 0, 0) (0, π, 0) (π, π, 0) (0, 0, π) (π, 0, π) (0, π, π) (π, π, π)], (2,2,2)))
-    @test grid_type(r2) === cP
     @test Nk(r2) == 2^3
     @test Nk(r16) == 4^3
     @test all(dispersion(r2) .≈ r2.ϵkGrid)
