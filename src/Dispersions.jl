@@ -11,7 +11,7 @@ using EquivalenceClassesConstructor
 export KGrid
 
 # access functions
-export gridPoints, Nk, gridshape, dispersion, grid_type, grid_dimension, ϵ_k_plus_q
+export gridPoints, Nk, gridshape, dispersion, grid_type, grid_dimension, grid_dimension, ϵ_k_plus_q
 
 # grid functions
 export reduceKArr,reduceKArr!,expandKArr,expandKArr!,
