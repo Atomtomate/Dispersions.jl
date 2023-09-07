@@ -3,17 +3,17 @@ using Base.Iterators
 # TODO: test ϵ_k_plus_q for other grid types than simple cubic
 
 @testset "gen_kGrid" begin
-    @test false skip = true
-    # gl = map(x -> gen_kGrid(x, NN), grid_list)
-    # for i = 1:length(gl)
-    #     for NN in [4, 6, 8]
-    #         kG = gl[i]
-    #         Di = grid_list_D[i]
-    #         @test kG.Nk == NN^Di
-    #         @test kG.Ns == NN
-    #         @test all(size(kG.fft_cache) .== repeat([NN], Di))
-    #     end
-    # end
+    for NN in [4, 6, 8]
+        gl = map(x -> gen_kGrid(x, NN), grid_list)
+        for i = 1:length(gl)
+            kG = gl[i]
+            Di = grid_list_D[i]
+            @test kG.Nk == NN^Di
+            @test kG.Ns == NN
+            @test all(size(kG.cache1) .== repeat([NN], Di))
+            @test all(size(kG.cache2) .== repeat([NN], Di))
+        end
+    end
 end
 
 @testset "shifted grid" begin
