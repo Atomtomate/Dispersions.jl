@@ -91,6 +91,8 @@ function gen_kGrid(kg::String, Ns::Int)
         KGrid(cPnn, 2, Ns, t, tp, tpp)
     elseif gt_s == "2dsc"
         KGrid(cP, 2, Ns, t, tp, tpp)
+    elseif gt_s == "4dsc"
+        KGrid(cP, 4, Ns, t, tp, tpp)
     elseif gt_s == "fcc"
         KGrid(cF, 3, Ns, t, tp, tpp)
     elseif gt_s == "bcc"

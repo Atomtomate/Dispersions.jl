@@ -26,6 +26,8 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
         [CartesianIndex(x, y) for x = la:ll+la for y = la:x]
     elseif D == 3
         [CartesianIndex(x, y, z) for x = la:ll+la for y = la:x for z = la:y]
+    elseif D == 4
+        [CartesianIndex(x1, x2, x3, x4) for x1 = la:ll+la for x2 = la:x1 for x3 = la:x2 for x4 = la:x3]
     else
         error("cP for D ∉ [2,3] not implemented yet!")
     end
