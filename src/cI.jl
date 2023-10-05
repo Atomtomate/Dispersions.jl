@@ -33,8 +33,12 @@ function reduce_KGrid(::Type{cI}, D::Int, Ns::Int, kGrid::AbstractArray)
         kMult[i] = length(fsymm(ind_red[i]))
         expand_perms[i] = CartesianIndex.(fsymm(ind_red[i]))
     end
-    red_conv_map = CartesianIndex.(reverse(ind)[CartesianIndex.(ind_red)])
-    return CartesianIndex.(ind_red), red_conv_map, kMult, expand_perms, grid_red
+    k0 = Tuple(repeat([0],D))
+    m1 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2)
+    ind_red = CartesianIndex.(ind_red)
+    ind_red_conv  = CartesianIndex.(circshift(ind, m1)[ind_red]); # indices after conv
+    ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[ind_red]); # indices after crossc
+    return ind_red, ind_red_conv, ind_red_crossc, kMult, expand_perms, grid_red
 end
 
 function gen_ϵkGrid(::Type{cI}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real}

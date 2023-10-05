@@ -52,41 +52,66 @@ function reduce_old(kGrid)
 end
 
 # typical use case.
-function naive_bubble(fk)
+function naive_bubble(fk, pp::Bool = false)
     ωn = 0
     νn = 0
     Σ_loc = 2.734962277113537 - 0.41638191263582125im
     β = 6.0
     μ = 3.512282168483125
+    s = pp ? -1 : 1
     disp(ki) = Dispersions.gen_ϵkGrid(T, [ki], fk.t)[1]
     res = zeros(Complex{Float64}, length(fk.kGrid))
+    k_en = pp ? reverse(enumerate(fk.kGrid)) : enumerate(fk.kGrid)
 
-    for (kii, ki) in enumerate(fk.kGrid)
+    for (kii, ki) in k_en
         for (qii, qi) in enumerate(fk.kGrid)
             Σ_int_ωn = Σ_loc
             Σ_int_ωn_νn = Σ_loc
             w1 = 1im * (π * (2 * ωn + 1) / β) + μ - Σ_int_ωn - disp(ki)
-            w2 = 1im * (π * (2 * (ωn + νn) + 1) / β) + μ - Σ_int_ωn_νn - disp(ki .+ qi)
+            w2 = 1im * (π * (2 * (ωn + s*νn) + 1) / β) + μ - Σ_int_ωn_νn - disp(qi .+ ki)
             res[qii] = res[qii] - 1.0 / (w1 * w2)
         end
     end
     return res
 end
 
-function naive_conv(arr1::AbstractArray, arr2::AbstractArray)
-    res = zeros(eltype(arr1), size(arr1))
-    for j in CartesianIndices(arr2)
-        for i in CartesianIndices(arr1)
-            #ii = mod1.(Tuple(j) .+ Tuple(i) .- Tuple(ones(Int,length(i))), size(arr1))
-            ii =
-                mod.(
-                    Tuple(j) .+ Tuple(i) .- Tuple(2 .* ones(Int, length(i))),
+function check_q(vals, Nk; pp=false, transform_back=true)
+    s = pp ? +1 : -1
+    q_list = Vector{eltype(vals[1])}(undef, length(vals))
+    for (i,el) in enumerate(vals)
+        q_list[i] =  transform_back ? (mod.(el[2] .+ s .* el[1] .- 2π/Nk .+ π, 2π) .- π .+ 2π/Nk) : (el[2] .+ s .* el[1])
+    end
+    return q_list
+end
+
+function naive_conv(arr1::AbstractArray, arr2::AbstractArray, k0ind::Tuple; pp::Bool=false, round_entries=true)
+    res = eltype(arr1) <: Number ? zeros(eltype(arr1), size(arr1)) : nothing
+    indices = Array{Vector{Tuple}}(undef, size(arr1))
+    res_dbg2 = Array{Vector{Tuple}}(undef, size(arr1))
+    arr2_int = pp ? reverse(arr2) : arr2
+    s = pp ? -1 : +1
+    for i in CartesianIndices(arr1)
+        indices[i] = []
+        res_dbg2[i] = []
+        for j in CartesianIndices(arr1)
+            ipj_pre = pp ? Tuple(i) .+ s .* Tuple(j) : Tuple(i) .+ s .* Tuple(j) .- k0ind
+            ipj = mod1.(
+                    ipj_pre,
                     size(arr1),
-                ) .+ Tuple(ones(Int, length(i)))
-            res[j] += arr1[i] * arr2[ii...]
+                )
+            push!(indices[i], (Tuple(j),ipj))
+            push!(res_dbg2[i], (arr1[j], arr2[ipj...]))
+            eltype(arr1) <: Number && (res[i] += arr1[j] * arr2[ipj...])
         end
     end
-    return res
+    res_dbg2 = round_entries ? map(x->map(xi->map(xii->round.(xii,digits=1),xi),x),res_dbg2) : res_dbg2
+    pp && eltype(arr1) <: Number && (res = circshift(res, k0ind))
+    pp && (indices = circshift(indices, k0ind))
+    pp && (res_dbg2 = circshift(res_dbg2, k0ind))
+    # !pp && (res = circshift(res, k0_ind .- 1) )
+    # !pp && (indices = circshift(indices, k0_ind .- 1) )
+    # !pp && (res_dbg2 = circshift(res_dbg2, k0_ind .- 1) )
+    return res, indices, res_dbg2
 end
 
 function naive_conv_fft_def(arr1::AbstractArray, arr2::AbstractArray)

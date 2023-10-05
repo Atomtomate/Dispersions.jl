@@ -11,7 +11,7 @@ For an example usage see [LadderDGA.jl](https://github.com/Atomtomate/LadderDGA.
 
 # Interface
 
-- `kG = genKGrid(s, nk)` will generate a k grid with `nk` points in each direction from a configuration string. Examples are `s = "2Dsc-1.0"` (2D simple cubic with hopping parameter - `t = 1.0`), `s = "p6m-1.0"` for a hexagonal lattice.
+- `kG = genKGrid(s, nk)` will generate a k grid with `nk` points in each direction from a configuration string. Examples are `s = "2Dsc-1.0"` (2D simple cubic with hopping parameter - `t = 1.0`), `s = "FCC-1.0-1.1-1.3"` for a FCC lattice.
 - `gridshape(kG)` returns the shape of a k grid. Example: `(4,4)` for a lattice generated with `genKGrid("2Dsc-1.0", 4)`
 - `Nk(kG)` returns the number of k points for the given grid. Example: `16` for a lattice generated with `genKGrid("2Dsc-1.0", 4)`
 - `gridPoints(kG)` returns the k vektors for the given grid.

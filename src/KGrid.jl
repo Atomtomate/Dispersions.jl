@@ -14,6 +14,8 @@ Fields
 - **`kGrid`**   : `Vector{NTuple{D,Float64}}`, vector of k-points. Each element is a D-tuple
 - **`ϵkGrid`**  : `Vector{Float64}`, Dispersion relation
 - **`kInd`**    : `Vector{NTuple{D,Int}}`, vector of indices mapping from the full to reduced lattice.
+- **`kInd_conv`**    : `Vector{NTuple{D,Int}}`, vector of indices mapping from the full to reduced lattice after convolution (this incorporates possible reorderings).
+- **`kInd_crossc`**   : `Vector{NTuple{D,Int}}`, vector of indices mapping from the full to reduced lattice after crosscorrelation (this incorporates possible reorderings).
 - **`kMult`**   : `Vector{Int}`, multiplicity per k-point in reduced lattice
 - **`expand_perms`** : `Vector{NTuple{D, Int}}`, mapping of each k-point in reduced lattice to full lattice points
 - **`expand_cache`** : `Array{ComplexF64}`, internal cache for expansion of reduced to full lattice before executing convolutions
@@ -26,10 +28,12 @@ struct KGrid{T <: KGridType, D}
     t::Float64
     tp::Float64
     tpp::Float64
+    k0::Tuple
     kGrid::GridPoints
     ϵkGrid::GridDisp
     kInd::GridInd
     kInd_conv::GridInd
+    kInd_crossc::GridInd
     kMult::Array{Float64,1}
     expand_perms::Vector{Vector{CartesianIndex{D}}}
     cache1::Array{ComplexF64,D}
@@ -38,11 +42,13 @@ struct KGrid{T <: KGridType, D}
     function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64, tpp::Float64; fftw_plan=nothing) where T<:KGridType
         sampling = gen_sampling(GT, D, Ns)
         kGrid_f = map(v -> basis_transform(GT, v), sampling)
-        kInd, kInd_conv, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
+        kInd, kInd_conv, kInd_crossc, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp, tpp)
         gs = repeat([Ns], D)
+        k0 = findfirst(k -> all(k .≈ 0), kGrid_f)
+        isnothing(k0) && error("k-grid sampling must contain zero-vector in order for convolutions to work!")
         fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
-        new{GT,D}(Ns^D, Ns, t, tp, tpp, kGrid, ϵkGrid, kInd, kInd_conv, kMult, expand_perms,
+        new{GT,D}(Ns^D, Ns, t, tp, tpp, k0, kGrid, ϵkGrid, kInd, kInd_conv, kInd_crossc, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
     end
 end
@@ -55,7 +61,7 @@ Generates a KGrid of type and hopping strength, given in `kG` with `Ns` sampling
 - '2dcP-...'         : simple cubic 2D
 - '2dcP-...-...-...' : simple cubic 2D with next-next nearest neighbor hopping
 - 'cF-...'           : FCC
-- 'p6m-...'          : hexagonal
+- 'cI-...'           : BCC
 
 # Examples
 ```
@@ -97,8 +103,6 @@ function gen_kGrid(kg::String, Ns::Int)
         KGrid(cF, 3, Ns, t, tp, tpp)
     elseif gt_s == "bcc"
         KGrid(cI, 3, Ns, t, tp, tpp)
-    elseif gt_s == "p6m"
-        KGrid(p6m, 2, Ns, t, tp, tpp)
     elseif startswith(gt_s, "hofstadter")
         P,Q = parse.(Int,split(gt_s, ":")[2:3])
         KGrid(Hofstadter{P,Q}, 2, Ns, t, tp, tpp)

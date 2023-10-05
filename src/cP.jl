@@ -29,7 +29,7 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
     elseif D == 4
         [CartesianIndex(x1, x2, x3, x4) for x1 = la:ll+la for x2 = la:x1 for x3 = la:x2 for x4 = la:x3]
     else
-        error("cP for D ∉ [2,3] not implemented yet!")
+        error("cP for D ∉ [2,3,4] not implemented yet!")
     end
 
     ind_red = GridInd{D}(undef, length(index))
@@ -40,10 +40,15 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
         ind_red[i] = CartesianIndex(ind[ti])
         grid_red[i] = kGrid[ti]
     end
-    ind_red_conv = CartesianIndex.(circshift(reverse(ind), floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1)[index]); # indices after conv
+    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
+    m1 = -1 .* k0 .+ 0
+    ind_red_conv  = CartesianIndex.(circshift(ind, m1)[index]); # indices after conv
+    ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[index]); # indices after crossc
+
+        #CartesianIndex.(circshift(ind, floor.(Int, Tuple(repeat([-Ns],D)) ./ 2) .+ 1)[index]); # indices after conv
 
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)
-    return index, ind_red_conv, kMult, expand_perms, grid_red
+    return index, ind_red_conv, ind_red_crossc, kMult, expand_perms, grid_red
 end
 
 function gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T, tp::T, tpp::T) where {T<:Real}
@@ -60,7 +65,12 @@ gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where {T<:Real} =
 #                             Custom Helper Functions                              #
 # -------------------------------------------------------------------------------- #
 
-conv_sample_post(kG::KGrid{cP,D}, x) where {D} =
+"""
+    conv_sample_post(kG::KGrid{cP,D}, x)
+
+This is needed in case the sampling is not starting at 0, i.e. [0,V) × [0,V) ... in order to shift the 0 frequency to the appropriate sampling point.   
+"""
+conv_sample_post(kG::KGrid{cP,D}, x; crosscorrelation=true) where {D} =
     ShiftedArrays.circshift(x, floor.(Int, gridshape(kG) ./ 2) .- 1)
 #TODO: this somehow works when not doing the reverse on the second input. We should find out why, this makes the convolution a lot faster
 conv_post_old(kG::KGrid{cP,D}, x::Array{T,D}) where {D,T<:Number} =
