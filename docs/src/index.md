@@ -11,8 +11,9 @@ The following functions are available for all grids.
 ## Basic access functions
 Convenience functions to access fields of k grid structs.
 
-```@docs
-Nk(kG::T) where T <: KGrid
+```@autodocs
+Modules = [Dispersions]
+Private = true
+Order   = [:module, :constant, :type, :function, :macro]
 
-gridPoints(kG::T) where T <: KGrid
 ```

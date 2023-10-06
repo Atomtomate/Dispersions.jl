@@ -17,23 +17,10 @@ This hierarchy ensures a set of comon functionalities, that external modules can
 ### Required Fieds
 Internally, the structs also need to have at least the following fields:
 
-** Full K-Grid   : **
-    - `Nk::Int` that sepcifies the number of k-points, which will be accessed by [`gridPoints`(@ref)
-    - `kGrid::T` where `isGridPoints(kG::T) = IsGridPoints{T}` needs to be defined for trait based dispatch to work properly. Generally it should be sufficient to use the predefined `const GridPoints2D = Array{Tuple{Float64,Float64}}` and respective 3D version.
-    - `ϵkGrid::Array{Float64, 1}` Array of dispersion relation ``\\epsilon\\_k``.
-
-** Reduced K-Grid: ** 
-    - Both fields from the full k-grid need to be present.
-    - `kMult::Array{Float64}` specifying the weight of each k point in th reduced grid
-    - `kInd::T`  where `isGridInd(kG::T) = IsGridInd{T}` needs to be defined for trait based dispatch to work properly. Generally it should be sufficient to use the predefined `const GridInd2D = Array{Tuple{Int,Int}}` and respective 3D version.
-
 
 ## Common Functions
 The following functions are available for all grids, due to the common struct fields defined above.
 
-```@docs
-Nk(kG::T) where T <: KGrid
-gridPoints(kG::T) where T <: KGrid
-```
+TODO
 
 ## Interface Functions
