@@ -7,7 +7,7 @@ using Base.Iterators
         gl = map(x -> gen_kGrid(x, NN), grid_list)
         for i = 1:length(gl)
             kG = gl[i]
-            Di = grid_list_D[i]
+            Di = grid_dimension(kG)
             @test kG.Nk == NN^Di
             @test kG.Ns == NN
             @test all(size(kG.cache1) .== repeat([NN], Di))
