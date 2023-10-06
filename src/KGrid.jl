@@ -116,16 +116,16 @@ end
     
     Evaluates the dispersion relation on the given reciprocal space but expanded and shifted by a constant vector `q`. The corresponding points in reciprocal space are given by `expandKArr(kG, gridPoints(kG))`.
 
-    Returns:
-    -------------
-    ϵ(k+shift): `Vector{NTuple{D,Float64}}`, where D is the diemenion of the grid. Dispersion relation evaluated on the given grid but shifted by the the vector q.
+Returns:
+-------------
+``\\epsilon(k+\\mathrm{shift}): `Vector{NTuple{D,Float64}}`, where D is the diemenion of the grid. Dispersion relation evaluated on the given grid but shifted by the the vector q.
 
-    ATTENTION: So far this function is tested for the simple cubic lattice only!
-    
-    Arguments:
-    -------------
-    - `kG`       : reciprocal lattice
-    - **`q`**    : vector in reciprocal space
+ATTENTION: So far this function is tested for the simple cubic lattice only!
+
+Arguments:
+-------------
+- `kG`       : reciprocal lattice
+- **`q`**    : vector in reciprocal space
 """
 function ϵ_k_plus_q(kG::KGrid, q::NTuple)
     if grid_dimension(kG) != length(q)
@@ -142,9 +142,9 @@ end
 
     Maps the given grid onto its KGridType without the number of dimensions.
 
-    Returns:
-    -------------
-    type : `KGridType`, type of the reciprocal lattice space, e.g. `cP`.
+Returns:
+-------------
+type : `KGridType`, type of the reciprocal lattice space, e.g. `cP`.
 """
 function grid_type(kG::KGrid)
     return typeof(kG).parameters[1]
