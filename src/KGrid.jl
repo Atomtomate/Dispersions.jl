@@ -46,7 +46,7 @@ struct KGrid{T <: KGridType, D}
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp, tpp)
         gs = repeat([Ns], D)
         k0 = findfirst(k -> all(k .≈ 0), kGrid_f)
-        isnothing(k0) && error("k-grid sampling must contain zero-vector in order for convolutions to work!")
+        isnothing(k0) && println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
         fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Ns^D, Ns, t, tp, tpp, k0, kGrid, ϵkGrid, kInd, kInd_conv, kInd_crossc, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
@@ -97,7 +97,7 @@ function gen_kGrid(kg::String, Ns::Int)
         KGrid(cPnn, 2, Ns, t, tp, tpp)
     elseif gt_s == "2dsc"
         KGrid(cP, 2, Ns, t, tp, tpp)
-    elseif gt_s == "4dsc"
+    elseif gt_s == "4dsc" || gt_s == "4dscnn"
         KGrid(cP, 4, Ns, t, tp, tpp)
     elseif gt_s == "fcc"
         KGrid(cF, 3, Ns, t, tp, tpp)
@@ -107,7 +107,7 @@ function gen_kGrid(kg::String, Ns::Int)
         P,Q = parse.(Int,split(gt_s, ":")[2:3])
         KGrid(Hofstadter{P,Q}, 2, Ns, t, tp, tpp)
     else
-        throw(ArgumentError("Unkown grid type: $kg"))
+        throw(ArgumentError("Unkown grid type: $kg / $gt_s"))
     end
 end
 
