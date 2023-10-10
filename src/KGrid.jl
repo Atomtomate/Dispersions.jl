@@ -46,7 +46,10 @@ struct KGrid{T <: KGridType, D}
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp, tpp)
         gs = repeat([Ns], D)
         k0 = findfirst(k -> all(k .≈ 0), kGrid_f)
-        isnothing(k0) && println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
+        if isnothing(k0) 
+            println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
+            k0 = first(CartesianIndices([1 2; 3 4]))
+        end
         fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
         new{GT,D}(Ns^D, Ns, t, tp, tpp, k0, kGrid, ϵkGrid, kInd, kInd_conv, kInd_crossc, kMult, expand_perms,
                   Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
