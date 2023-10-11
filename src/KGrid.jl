@@ -45,7 +45,7 @@ struct KGrid{T <: KGridType, D}
         kInd, kInd_conv, kInd_crossc, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp, tpp)
         gs = repeat([Ns], D)
-        k0 = findfirst(k -> all(k .≈ 0), kGrid_f)
+        k0 = findfirst(k -> all(isapprox.(k, 0, atol=1e-7)), kGrid_f)
         if isnothing(k0) 
             println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
             k0 = first(CartesianIndices([1 2; 3 4]))
