@@ -365,3 +365,51 @@ function conv_post_add!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T};
     norm = Nk(kG)
     res[:] += crosscorrelation ? x[kG.kInd_crossc] ./ norm : x[kG.kInd_conv] ./ norm
 end
+
+# --------------------------- Symmetry Path Sampling --------------------------
+"""
+    findnearest(p, A::AbstractArray) = findmin(map(vi -> norm(vi .- p),A))
+
+Finds nearest sampling point in grid `A` to point `p`.
+"""
+findnearest(p::T, A::AbstractArray{T}) where T = findmin(map(vi -> norm(vi .- p),A))
+
+"""
+    map_to_indices_full(path::AbstractVector, grid::AbstractArray)
+
+Finds indices for points along path. 
+Also returns residual values for points, i.e. norm of distance vector between point on path and point in grid.
+"""
+function map_to_indices_full(path::AbstractVector, grid::AbstractArray)
+    result_points = Array{CartesianIndex,1}(undef, length(path))
+    residual_vals = Array{Float64,1}(undef, length(path))
+    for (i,point) in enumerate(path)
+        residual_vals[i], result_points[i] = findnearest(point, grid)
+    end
+    return result_points, residual_vals
+end
+
+"""
+    map_to_indices(path::AbstractVector, grid::AbstractArray, kG::KGrid)
+
+Finds indices for points along path for reduced k-grid. 
+Also returns residual values for points, i.e. norm of distance vector between point on path and point in grid.
+"""
+function map_to_indices(path::AbstractVector, grid::AbstractArray, kG::KGrid)
+    result_points, residual_vals = map_to_indices_full(path, grid)
+    rr = map(pi -> findfirst(ki_l -> pi in ki_l, kG.expand_perms), result_points)
+    return rr, residual_vals
+end
+
+"""
+    sample_along_path(data::AbstractArray, path::AbstractVector, kG::KGrid)
+
+Sample `data` from reduced grid `kG` along `path`.
+Returns data and residual values (`Vector` of distances between points along path and sample points used).
+"""
+function sample_along_path(data::AbstractArray, path::AbstractVector, kG::KGrid)
+    sampling = gen_sampling(grid_type(kG), grid_dimension(kG), kG.Ns)
+    grid = map(v -> basis_transform(grid_type(kG), v), sampling);
+    result_points, residual_vals = map_to_indices(path, grid, kG)
+    return data[rr], residual_vals
+end

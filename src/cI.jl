@@ -9,9 +9,10 @@ abstract type cI <: KGridType end
 # -------------------------------------------------------------------------------- #
 
 gen_sampling(::Type{cI}, D::Int, Ns::Int) =
-    Base.product([[(2 * π / Ns) * (j - 1) for j = 1:Ns] for Di = 1:3]...)
+    Base.product([[(2 * π / Ns) * j - π for j = 1:Ns] for Di = 1:D]...)
+
 basis_transform(::Type{cI}, v::Tuple) =
-    Tuple([1.0 1.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0] * collect(v))
+    Tuple(transpose([1.0 1.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]) * collect(v))
 
 function reduce_KGrid(::Type{cI}, D::Int, Ns::Int, kGrid::AbstractArray)
     (D != 3) && throw(
@@ -33,8 +34,9 @@ function reduce_KGrid(::Type{cI}, D::Int, Ns::Int, kGrid::AbstractArray)
         kMult[i] = length(fsymm(ind_red[i]))
         expand_perms[i] = CartesianIndex.(fsymm(ind_red[i]))
     end
-    k0 = Tuple(repeat([0],D))
-    m1 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2)
+    #TODO: find k0 in sampling instead of hard coded index!
+    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
+    m1 = -1 .* k0 .+ 0
     ind_red = CartesianIndex.(ind_red)
     ind_red_conv  = CartesianIndex.(circshift(ind, m1)[ind_red]); # indices after conv
     ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[ind_red]); # indices after crossc

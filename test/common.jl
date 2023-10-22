@@ -106,3 +106,6 @@ end
     end
     end
 end
+
+@testset "symmetry paths" begin
+end

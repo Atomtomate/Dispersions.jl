@@ -64,6 +64,9 @@ gen_ϵkGrid(::Type{cP}, kGrid::GridPoints, t::T) where {T<:Real} =
 # -------------------------------------------------------------------------------- #
 #                             Custom Helper Functions                              #
 # -------------------------------------------------------------------------------- #
+function symmetry_points(kG::KGrid)
+    [()]
+end
 
 """
     conv_sample_post(kG::KGrid{cP,D}, x)

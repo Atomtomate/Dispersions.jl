@@ -17,4 +17,26 @@ basis_transform(gt::GT, v::AbstractVector) where {GT} =
     throw(ArgumentError("Cannot basis transform! Grid type $gt unkown!"))
 reduce_KGrid(gt::GT, D::Int, Nk::Int, kGrid::Vector) where {GT} =
     throw(ArgumentError("Cannot reduce k grid! Grid type $gt unkown!"))
-#gen_ϵkGrid(gt, kGrid, t) =  throw(ArgumentError("Cannot generate dispersion relation! Grid type $gt unkown!"))
+
+# """
+#     symmetry_points(::GridType)
+
+# Returns:
+# -------------
+# PointList : `Vector{GridInd}`, List of high symmetry points, each lattice overloads this.
+# """
+# function symmetry_points(kG::KGrid)::GridPoints where GT
+#     return GridPoints[]
+# end
+
+# """
+#     symmetry_paths(::GridType, N::Int)
+
+# Returns:
+# -------------
+# PathsList : `Vector`, List of symmetry paths, each lattice overloads this.
+# """
+# function symmetry_paths(kG::KGrid)::Vector where GT
+#     []
+# end
+# #gen_ϵkGrid(gt, kGrid, t) =  throw(ArgumentError("Cannot generate dispersion relation! Grid type $gt unkown!"))

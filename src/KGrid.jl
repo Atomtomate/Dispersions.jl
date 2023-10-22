@@ -134,8 +134,7 @@ function ϵ_k_plus_q(kG::KGrid, q::NTuple)
     if grid_dimension(kG) != length(q)
         throw(ArgumentError("Grid dimension differs from shift dimension!"))
     else
-        k_sampling_full  = expandKArr(kG, gridPoints(kG))[:]
-        k_plus_q = map(k -> k_sampling_full[k] .+ q, 1:length(k_sampling_full))
+        k_plus_q = map(ki -> ki .+ q, expandKArr(kG, gridPoints(kG))[:])
         return gen_ϵkGrid(grid_type(kG), k_plus_q, kG.t)
     end
 end
@@ -156,12 +155,28 @@ end
 """
     grid_dimension(kG::KGrid)
 
-    Maps the given grid onto its dimension.
+Maps the given grid onto its dimension.
 
-    Returns:
-    -------------
-    D : `Int`, dimension of the reciprocal lattice space.
+Returns:
+-------------
+D : `Int`, dimension of the reciprocal lattice space.
 """
 function grid_dimension(kG::KGrid)
     return typeof(kG).parameters[2]
+end
+
+
+"""
+    map_to_indices(path::AbstractVector, grid::AbstractArray)
+
+Maps vectors in the given input array `path` to indices in the given k-grid `grid`. 
+This is used internally, to construct indices for symmetry paths.
+"""
+function map_to_indices(path::AbstractVector, grid::AbstractArray)
+    result_points = Array{CartesianIndex,1}(undef, length(path))
+    residual_vals = Array{Float64,1}(undef, length(path))
+    for (i,point) in enumerate(path)
+        residual_vals[i], result_points[i] = findnearest(point, grid)
+    end
+    return result_points, residual_vals
 end
