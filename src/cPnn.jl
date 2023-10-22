@@ -13,6 +13,9 @@ gen_sampling(::Type{cPnn}, D::Int, Ns::Int) =
 
 basis_transform(::Type{cPnn}, v::Tuple) = v
 
+transform_to_first_BZ(kG::KGrid{cPnn,D}, k) where D =
+    mod.(k .+ (π - 1/Nk(kG)), 2π) .+ (-π) .+ 1/Nk(kG)
+
 function reduce_KGrid(::Type{cPnn}, D::Int, Ns::Int, kGrid::AbstractArray)
     return reduce_KGrid(cP, D::Int, Ns::Int, kGrid::AbstractArray)
 end

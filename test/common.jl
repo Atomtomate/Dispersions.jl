@@ -111,6 +111,10 @@ end
                     minus_v_full = reverseKArr(kG, v_full)
                     #minus_v_full_red = reduceKArr(kG, minus_v_full)
                     @test all(map(x-> all(x[1] .≈ x[2]), zip(minus_vec_naive, minus_v_full)))
+                    
+                    #TODO: this needs more tests and impl. for other lattices!
+                    zero_vec = Tuple(repeat([0],grid_dimension(kG)))
+                    @test all(transform_to_first_BZ(kG, zero_vec) .≈ zero_vec)
                 end
             end
         end

@@ -114,6 +114,16 @@ function gen_kGrid(kg::String, Ns::Int)
     end
 end
 
+
+"""
+    transform_to_first_BZ(kG, k)
+
+Returns a new vector `kp` that is transformed back into the sample region of `kG`.
+"""
+transform_to_first_BZ(kG::KGrid{GridType,D}, k) where {GridType,D} = 
+    throw(ArgumentError("Cannot transform back to first BZ! Grid type $gt unkown!"))
+
+
 """
     ϵ_k_plus_q(kG::KGrid, q::NTuple)
     
@@ -142,11 +152,9 @@ end
 """
     grid_type(kG::KGrid)
 
-    Maps the given grid onto its KGridType without the number of dimensions.
+Returns the grid type of `kG`.
 
-Returns:
--------------
-type : `KGridType`, type of the reciprocal lattice space, e.g. `cP`.
+Used to call functions like [`gen_sampling`](@ref gen_sampling), that expect a grid type as input.
 """
 function grid_type(kG::KGrid)
     return typeof(kG).parameters[1]
@@ -155,16 +163,13 @@ end
 """
     grid_dimension(kG::KGrid)
 
-Maps the given grid onto its dimension.
+Returns the grid dimension of `kG`.
 
-Returns:
--------------
-D : `Int`, dimension of the reciprocal lattice space.
+Used to call functions like [`gen_sampling`](@ref gen_sampling), that expect a grid dimension as input.
 """
 function grid_dimension(kG::KGrid)
     return typeof(kG).parameters[2]
 end
-
 
 """
     map_to_indices(path::AbstractVector, grid::AbstractArray)
