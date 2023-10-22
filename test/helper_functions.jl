@@ -128,3 +128,5 @@ end
 function fcc_dispersion(k::Tuple, t::Float64)
     return -4t*(cos(k[1]/2) * cos(k[2]/2) + cos(k[1]/2) * cos(k[3]/2) + cos(k[2]/2) * cos(k[3]/2))
 end
+
+transform_k_to_minus_k(k, kG) = map(ki -> ki != 0 ? mod.(-1 .* ki .+ π .- 1/Nk(kG), 2π) .- π .+ 1/Nk(kG) : ki, k)

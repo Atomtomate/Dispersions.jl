@@ -5,6 +5,7 @@ export reduceKArr,
     reduceKArr!,
     expandKArr,
     expandKArr!,
+    reverseKArr,
     conv,
     conv!,
     conv_fft,
@@ -41,7 +42,7 @@ Returns dispersion relation of grid.
 """
 dispersion(kG::T) where {T<:KGrid} = kG.ϵkGrid
 
-# ------------------------------ Helper Functions -----------------------------
+# ------------------------- Sampling Related Functions ------------------------
 """
     reduceKArr(kGrid::KGrid, arr)
 
@@ -95,11 +96,7 @@ end
 Inplace version of [`expandKArr`](@ref). The results are written to `kG.cache1`.
 """
 function expandKArr!(kG::KGrid, arr::Array{Complex{Float64},1})
-    for (ri, perms) in enumerate(kG.expand_perms)
-        @simd for p in perms
-            @inbounds kG.cache1[p] = arr[ri]
-        end
-    end
+    expandKArr!(kG, kG.cache1, arr)
 end
 
 """
@@ -119,6 +116,26 @@ function expandKArr!(
     end
 end
 
+"""
+    reverseKArr(kGrid::KGrid, arr)
+
+Takes a kGrid `kGrid` and arbitrary data `arr` over a reduced OR full BZ and returns an array with reversed
+k-indices. I.e., ``\\f_q \\to f_{-q}``.
+"""
+function reverseKArr(
+    kG::KGrid{gT,D},
+    arr::AbstractArray{T,1},
+)::AbstractArray{T,1} where {gT <: KGridType,T,D}
+    reduceKArr(reverseKArr(kG, expandKArr(kG, arr)))
+end
+
+function reverseKArr(
+    kG::KGrid{gT,D},
+    arr::AbstractArray{T,D},
+)::AbstractArray{T,D} where {gT <: KGridType,T,D}
+    shift_vec = 2 .* kG.k0 .- gridshape(kG) .- 1
+    return circshift(reverse(arr), shift_vec)
+end
 
 # ------------------------------ Convolution Functions -----------------------------
 """
