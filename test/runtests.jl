@@ -2,6 +2,7 @@ using Test
 
 using Dispersions
 using Random
+using LinearAlgebra
 
 
 grid_list = ["2Dsc-1.3", "3Dsc-1.3", "fcc-1.4", "2Dsc--1.6", "2Dsc-1.7--1.8-1.9", "2Dsc-1.7--1.8--1.9", "bcc-1.1"]
@@ -38,4 +39,8 @@ end
 
 @testset "common" begin
     include("./common.jl")
+end
+
+@testset "helpers" begin
+    include("./helpers.jl")
 end

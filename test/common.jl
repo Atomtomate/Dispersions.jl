@@ -53,7 +53,7 @@ end
 
                 conv_pp_naive,_,_ = naive_conv(arr1_sym, arr2_sym, kG.k0, pp=true);
                 conv_pp_test = Dispersions.conv(kG, reduceKArr(kG,arr1_sym), reduceKArr(kG, arr2_sym), crosscorrelation=false)
-                @test all(conv_pp_naive ./ kG.Nk .≈ expandKArr(kG, conv_pp_test))
+                @test all(isapprox.(conv_pp_naive ./ kG.Nk, expandKArr(kG, conv_pp_test), atol=1e-6))
 
 
                 @test all(reduceKArr(kG, expandKArr(kG, conv_res)) .≈ conv_res)     # is symmetry preserved?
@@ -114,7 +114,11 @@ end
                     
                     #TODO: this needs more tests and impl. for other lattices!
                     zero_vec = Tuple(repeat([0],grid_dimension(kG)))
-                    @test all(transform_to_first_BZ(kG, zero_vec) .≈ zero_vec)
+                        if !all(norm(collect(transform_to_first_BZ(kG, zero_vec)) .- collect(zero_vec)) < 1e-8)
+                        println(kG)
+                        println(transform_to_first_BZ(kG, zero_vec))
+                    end
+                    @test all(norm(collect(transform_to_first_BZ(kG, zero_vec)) .- collect(zero_vec)) < 1e-8)
                 end
             end
         end

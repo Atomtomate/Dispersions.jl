@@ -18,13 +18,16 @@ export reduceKArr,reduceKArr!,expandKArr,expandKArr!,
     conv,conv!,conv_fft,conv_fft!,conv_fft1,conv_fft1!
 export conv_noPlan,conv_noPlan!,conv_fft_noPlan,conv_fft_noPlan!,conv_fft1_noPlan,conv_fft1_noPlan!
     
+# helper functions
+export build_q_lookup
 
 # grids 
 export gen_kGrid, cP, cPnn, cF, cI, Hofstadter
 
 # sum types
 export KSum
-# functions
+
+# integrate functions
 export kintegrate
 
 
@@ -38,6 +41,8 @@ include("cF.jl")
 include("cI.jl")
 include("BZIntegration.jl")
 include("IO.jl")
+
+include("helpers.jl")
 
 
 end
