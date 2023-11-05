@@ -85,7 +85,7 @@ end
 @testset "grid subsampling" begin
     #TODO: this is only a first draft implementation
     kG_full = gen_kGrid("2Dsc-1.1", 20)
-    kG_sub = build_kGrid_subsample(kG_full, 11)
+    kG_sub,ii = build_kGrid_subsample(kG_full, 11)
     tt = map(x-> round.(x,digits=4), dispersion(kG_full))
     @test all(map(x-> round.(x,digits=4) in tt, dispersion(kG_sub)))
     @test kG_sub.Ns == 10

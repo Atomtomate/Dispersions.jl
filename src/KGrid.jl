@@ -205,10 +205,14 @@ function check_subsample(sub_sample, full_sample)
     return test_k_subsample
 end
 
+subsample_indices(sub_sample, full_sample) = map(kv -> findfirst(el -> all(el .≈ kv),full_sample), sub_sample)
+
 """
     build_kGrid_subsample(kG_full::Kgrid, Nk_sub::Int)
 
 Builds new [`KGrid`](@ref KGrid) of the same type as `kG_full` with at most `Nk_sub` sample points.
+
+Returns new `KGrid` and `Vector{Cartesianindex}` of indices for indices corresponding to full grid.
 
 TODO: this is brute-force checking all sizes for now!
 """
@@ -216,18 +220,22 @@ function build_kGrid_subsample(kG_full::KGrid, Nk_sub::Int)
     println("Brute force checking for possible sub-samples. This needs to be rewritten")
     full_sample_approx = map(x -> round.(x, digits=5), kG_full.kGrid)
     res = nothing
+    sub_indices = nothing
+    
     for Nk_test = Nk_sub:-1:1
         ti = if iseven(Nk_test)
             kG_sub = KGrid(grid_type(kG_full), grid_dimension(kG_full), Nk_test, kG_full.t, kG_full.tp, kG_full.tpp)
             sub_sample_approx = map(x -> round.(x, digits=5), kG_sub.kGrid)
             ti = check_subsample(sub_sample_approx, full_sample_approx)
-            println("at $ti / $Nk_test")
-            ti && (res = kG_sub)
+            if ti 
+                res = kG_sub
+                sub_indices = subsample_indices(sub_sample_approx, full_sample_approx)
+            end
             ti
         else
             false
         end 
         ti && break
     end
-    return res
+    return res, sub_indices
 end
