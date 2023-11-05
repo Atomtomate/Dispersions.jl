@@ -19,7 +19,7 @@ export reduceKArr,reduceKArr!,expandKArr,expandKArr!,
 export conv_noPlan,conv_noPlan!,conv_fft_noPlan,conv_fft_noPlan!,conv_fft1_noPlan,conv_fft1_noPlan!
     
 # helper functions
-export build_q_lookup
+export build_q_lookup, build_kGrid_subsample
 
 # grids 
 export gen_kGrid, cP, cPnn, cF, cI, Hofstadter

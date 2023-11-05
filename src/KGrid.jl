@@ -1,6 +1,7 @@
 #TODO: t/tp/tpp should be a vector
 # TODO: rename gen_shifted_ϵkGrid to something appropriate
 
+# ============================================ KGrid Type ============================================
 """
     KGrid{T <: KGridType, D}
 
@@ -184,4 +185,49 @@ function map_to_indices(path::AbstractVector, grid::AbstractArray)
         residual_vals[i], result_points[i] = findnearest(point, grid)
     end
     return result_points, residual_vals
+end
+
+
+# ================================= Subsampling (Reimplement this!!!) ================================
+"""
+    check_subsample(sub_sample, full_sample)
+
+Internal function, checking if all sample points of a sub-sample are contained in full sample.
+See [`build_kGrid_subsample`](@ref build_kGrid_subsample).
+"""
+function check_subsample(sub_sample, full_sample)
+    test_k_subsample = true
+    for kv in sub_sample
+        if !(kv in full_sample)
+            test_k_subsample = false
+        end
+    end
+    return test_k_subsample
+end
+
+"""
+    build_kGrid_subsample(kG_full::Kgrid, Nk_sub::Int)
+
+Builds new [`KGrid`](@ref KGrid) of the same type as `kG_full` with at most `Nk_sub` sample points.
+
+TODO: this is brute-force checking all sizes for now!
+"""
+function build_kGrid_subsample(kG_full::KGrid, Nk_sub::Int)
+    println("Brute force checking for possible sub-samples. This needs to be rewritten")
+    full_sample_approx = map(x -> round.(x, digits=5), kG_full.kGrid)
+    res = nothing
+    for Nk_test = Nk_sub:-1:1
+        ti = if iseven(Nk_test)
+            kG_sub = KGrid(grid_type(kG_full), grid_dimension(kG_full), Nk_test, kG_full.t, kG_full.tp, kG_full.tpp)
+            sub_sample_approx = map(x -> round.(x, digits=5), kG_sub.kGrid)
+            ti = check_subsample(sub_sample_approx, full_sample_approx)
+            println("at $ti / $Nk_test")
+            ti && (res = kG_sub)
+            ti
+        else
+            false
+        end 
+        ti && break
+    end
+    return res
 end
