@@ -15,11 +15,12 @@ basis_transform(::Type{Hofstadter{P,Q}}, v::Tuple) where {P,Q} = (v[1], v[2]/Q)
 
 function reduce_KGrid(::Type{Hofstadter{P,Q}}, D::Int, Ns::Int, kGrid::AbstractArray) where {P,Q}
     ind = collect(Base.product([1:Ns for Di in 1:2]...))
+    index = [CartesianIndex(el) for el in ind[:]]
     kMult = ones(length(ind))
     expand_perms = map(x -> [CartesianIndex{2}(x)],ind[:])
     red_map = CartesianIndex.(ind[:])
     red_conv_map = reverse(red_map)
-    return ind, red_map, red_conv_map, kMult, expand_perms, kGrid[:]
+    return index, red_map, red_conv_map, kMult, expand_perms, kGrid[:]
 end
 
 function gen_ϵkGrid_Hofstadter_ij_old(::Type{Hofstadter{P,Q}}, i::Int, j::Int, kᵢ::NTuple{2,Float64}, t::Float64, tp::Float64, tpp::Float64) where {P,Q}
