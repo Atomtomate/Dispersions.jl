@@ -18,11 +18,9 @@ transform_to_first_BZ(kG::KGrid{cP,D}, k) where D =
 
 
 function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
-    (Ns % 2 != 0 && Ns != 1) && throw(
-        ArgumentError(
-            "Cannot reduce simple cubic lattice with uneven number of samplng points!",
-        ),
-    )
+    (Ns % 2 != 0 && Ns != 1) && 
+        println("WARNING! k-sampling with uneven grid-points may break functionality!")
+        
     ind = collect(Base.product([1:Ns for Di = 1:D]...))
     ll = floor(Int, size(kGrid, 1) / 2 + 1) - 1
     la = ceil(Int, Ns / 2)

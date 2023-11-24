@@ -108,7 +108,10 @@ function gen_kGrid(kg::String, Ns::Int)
     elseif gt_s == "bcc"
         KGrid(cI, 3, Ns, t, tp, tpp)
     elseif startswith(gt_s, "hofstadter")
-        P,Q = parse.(Int,split(gt_s, ":")[2:3])
+        println(gt_s, ", ", t, ", ", tp, ", ", tpp)
+        GridName,P,Q = split(gt_s, ":")
+        P = parse(Int, P)
+        Q = parse(Int, Q)
         KGrid(Hofstadter{P,Q}, 2, Ns, t, tp, tpp)
     else
         throw(ArgumentError("Unkown grid type: $kg / $gt_s"))
