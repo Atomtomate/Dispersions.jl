@@ -40,33 +40,74 @@ function gen_ϵkGrid_Hofstadter_ij_old(::Type{Hofstadter{P,Q}}, i::Int, j::Int, 
     return res
 end
 
+"""
+    gen_ϵkGrid_Hofstadter_ij(::Type{Hofstadter{P,Q}}, i::Int, j::Int, kᵢ::NTuple{2,Float64}, t::Float64, tp::Float64, tpp::Float64) where {P,Q}
+
+Indices for entries of dispersion matrix for Hofstadter model.
+"""
 function gen_ϵkGrid_Hofstadter_ij(::Type{Hofstadter{P,Q}}, i::Int, j::Int, kᵢ::NTuple{2,Float64}, t::Float64, tp::Float64, tpp::Float64) where {P,Q}
     res = 0.0
 
+    # kᵢ[1] .=, kx, kᵢ[2] .=. ky
+    # definition: epsilon[i,j], 
+
+    # cos argument for diagonal
     xv = kᵢ[1] + 2*π*P*(i-1)/Q
-    yv = 1im*Q*kᵢ[2]
+
+    # exp arguemnt for corner
+    yv = 1im*Q*kᵢ[2] 
+    
+
+    # Diagonal (contains t and t'')
     if i==j
-        res += -2*t*(cos(xv)) - 2*tpp*cos(2*xv)
+        res += -2*t*cos(xv) 
+        res += -2*tpp*cos(2*xv)
     end
+
+    # 1. off-diagonal (contains t and t')
     if i == j+1 || i == j-1
-        res += -t - 2*tp*cos(xv)
+        res += -t 
+        #????
+        n = max(i,j) 
+        xv_tp = kᵢ[1] + 2*π*P*((n-2) + 1/2)/Q
+        res += -2*tp*cos(xv_tp)
     end
+
+    # 2. off-diagonal (contains t'')
     if i == j+2 || i == j-2
         res += -tpp
     end
+
+    # t and t' corners
+    ## (bottom left)
     if i == Q && j == 1
         tp_x = kᵢ[1] - π*P/Q
-        res += -t*exp(-yv) -2*tpp*cos(tp_x)*exp(-yv)
+        res += -t*exp(-yv)
+        res += -2*tp*cos(tp_x)*exp(-yv)
     end
-    if j == Q && i == 1
+
+    ## (top right)
+    if i == 1 && j == Q
         tp_x = kᵢ[1] - π*P/Q
-        res += -t*exp(yv) -2*tpp*cos(tp_x)*exp(yv)
+        res += -t*exp(yv)
+        res += -2*tp*cos(tp_x)*exp(yv)
     end
-    if i == Q && j == 2
+
+    # t'' corners
+    ## (bottom left)
+    if i == Q-1 && j == 1
         res += -tpp*exp(-yv)
     end
-    if j == Q && i == 2
-        res += -tp*exp(yv)
+    if i == Q   && j == 2
+        res += -tpp*exp(-yv)
+    end
+
+    ## (top right)
+    if i == 1   && j == Q-1
+        res += -tpp*exp(yv)
+    end
+    if i == 2   && j == Q
+        res += -tpp*exp(yv)
     end
     return res
 end
