@@ -1,13 +1,25 @@
 Types and standard operation for k grids and tight binding dispersions in solid state theory.
 This project is inteded to be used as a backend for k grid related operations in order to abstract over the actual k grid logic.
-For an example usage see [LadderDGA.jl](https://github.com/Atomtomate/LadderDGA.jl)
+For an example usage see [LadderDGA.jl](https://github.com/Atomtomate/LadderDGA.jl) and [jED.jl](https://github.com/Atomtomate/jED.jl)
 
 |     Build Status    |      Coverage      |  Documentation |      Social    |
 | ------------------- |:------------------:| :-------------:| :-------------:|
 | [![Build Status](https://github.com/Atomtomate/Dispersions.jl/workflows/CI/badge.svg)](https://github.com/Atomtomate/Dispersions.jl/actions) | [![codecov](https://codecov.io/gh/Atomtomate/Dispersions.jl/branch/master/graph/badge.svg?token=FbJKjHb7DW)](https://codecov.io/gh/Atomtomate/Dispersions.jl) | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Atomtomate.github.io/Dispersions.jl/stable) |[![Gitter](https://badges.gitter.im/JuliansBastelecke/EquivalenceClasses.svg)](https://gitter.im/JuliansBastelecke/EquivalenceClasses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) |
 
-# Overview
+# Available Tight Binding Models
 
+KGrid are generated as follows:
+```
+Nk = 100 # Number of k-sampling points
+GS = "..." # Grid-string, see below
+```
+
+- `GS = "2Dsc-t-tp-tpp"`: 2D simple cubic with t, t', t''. For slightly improved performance, one can ommit t' and t'' when not needed, i.e. `Nk = 100; kG = gen_kGrid("2Dsc-1.1", Nk)`
+- `GS = "3Dsc-t-tp-tpp"`: 3D simple cubic
+- `GS = "4Dsc-t-tp-tpp"`: 4D simple cubic
+- `GS = "fcc-t"`: fcc, t' and t''must be left out!
+- `GS = "bcc-t"`: bcc, t' and t''must be left out!
+- `Hofstadter:P:Q-t-tpt-pp`: Hofstadter model with P,Q parameters for magnetic field and hopping t, t', t''
 
 # Interface
 
