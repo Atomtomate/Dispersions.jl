@@ -48,7 +48,7 @@ struct KGrid{T <: KGridType, D}
         gs = repeat([Ns], D)
         k0 = findfirst(k -> all(isapprox.(k, 0, atol=1e-7)), kGrid_f)
         if isnothing(k0) 
-            println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
+            #println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
             k0 = first(CartesianIndices([1 2; 3 4]))
         end
         fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
