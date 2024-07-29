@@ -38,6 +38,11 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     ind_red = CartesianIndex.(ind_red)
     ind_red_conv  = CartesianIndex.(circshift(ind, m1)[ind_red]); # indices after conv
     ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[ind_red]); # indices after crossc
+    # Change from CartesianIndices to LinearIndices for performance reasons
+    I = LinearIndices(ind)
+    ind_red = I[ind_red]
+    ind_red_conv = I[ind_red_conv]
+    ind_red_crossc = I[ind_red_crossc]
     return ind_red, ind_red_conv, ind_red_crossc, kMult, expand_perms, grid_red
 end
 

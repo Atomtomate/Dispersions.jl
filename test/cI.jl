@@ -1,5 +1,4 @@
 using Base.Iterators
-include("helper_functions.jl")
 
 @testset "dispersion" begin
     r8 = gen_kGrid("bcc-1.2",2)

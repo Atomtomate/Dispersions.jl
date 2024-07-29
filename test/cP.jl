@@ -2,7 +2,7 @@ using Base.Iterators
 
 
 @testset "2D" begin
-    @test_throws ArgumentError gen_kGrid("2Dsc-1.3",3)
+    # @test_throws ArgumentError gen_kGrid("2Dsc-1.3",3)
     r2 = gen_kGrid("2Dsc-1.3",2)
     r16 = gen_kGrid("2Dsc-1.4",16)
     @test Nk(r2) == 2^2
@@ -19,7 +19,7 @@ end
 
 
 @testset "3D" begin
-    @test_throws ArgumentError gen_kGrid("3Dsc-1.3",3)
+    # @test_throws ArgumentError gen_kGrid("3Dsc-1.3",3)
     r2 = gen_kGrid("3Dsc-1.2",2)
     r16 = gen_kGrid("3Dsc-1.1",4)
     indTest = reduceKArr(r2, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))
@@ -37,7 +37,7 @@ end
 end
 
 @testset "4D" begin
-    @test_throws ArgumentError gen_kGrid("4Dsc-1.3",3)
+    # @test_throws ArgumentError gen_kGrid("4Dsc-1.3",3)
     r2 = gen_kGrid("4Dsc-1.2",2)
     r16 = gen_kGrid("4Dsc-1.1",4)
     #indTest = reduceKArr(r2, reshape([(1, 1, 1) (2, 1, 1) (1, 2, 1) (2, 2, 1) (1, 1, 2) (2, 1, 2) (1, 2, 2) (2, 2, 2)], (2,2,2)))

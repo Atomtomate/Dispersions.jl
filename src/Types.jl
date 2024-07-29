@@ -6,7 +6,7 @@
 # ================================================================================ #
 
 # --------------------------------- convenience defs -------------------------------
-const GridInd{D} = Vector{CartesianIndex{D}}
+const GridInd{D} = Vector{Int}
 const GridPoints{D} = Vector{NTuple{D,Float64}}
 const GridDisp = Union{Array{Float64,1}, Array{ComplexF64,3}}
 

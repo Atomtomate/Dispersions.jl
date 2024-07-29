@@ -26,21 +26,21 @@ gridshape(kG::KGrid{T,D}) where {T,D} = ntuple(_ -> kG.Ns, D)
 
 Total number of k points (length of `kGrid.kGrid` for full grids). 
 """
-Nk(kG) = kG.Nk
+Nk(kG::KGrid)::Int = kG.Nk
 
 """
     gridPoints(kG::T)::Int where T <: KGrid
 
 k vektors for the given grid. Elements of the irreducible part only.
 """
-gridPoints(kG::T) where {T<:KGrid} = kG.kGrid
+gridPoints(kG::KGrid) = kG.kGrid
 
 """
     dispersion(kG::T)::Int where T <: KGrid
 
 Returns dispersion relation of grid.
 """
-dispersion(kG::T) where {T<:KGrid} = kG.ϵkGrid
+dispersion(kG::KGrid) = kG.ϵkGrid
 
 # ------------------------- Sampling Related Functions ------------------------
 """

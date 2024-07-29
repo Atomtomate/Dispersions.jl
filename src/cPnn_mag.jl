@@ -20,6 +20,11 @@ function reduce_KGrid(::Type{Hofstadter{P,Q}}, D::Int, Ns::Int, kGrid::AbstractA
     expand_perms = map(x -> [CartesianIndex{2}(x)],ind[:])
     red_map = CartesianIndex.(ind[:])
     red_conv_map = reverse(red_map)
+    # Change from CartesianIndices to LinearIndices for performance reasons
+    I = LinearIndices(ind)
+    index = I[index]
+    # ind_red_conv = I[ind_red_conv]
+    # ind_red_crossc = I[ind_red_crossc]
     return index, red_map, red_conv_map, kMult, expand_perms, kGrid[:]
 end
 

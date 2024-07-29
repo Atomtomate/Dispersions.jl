@@ -34,7 +34,7 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
         error("cP for D ∉ [2,3,4] not implemented yet!")
     end
 
-    ind_red = GridInd{D}(undef, length(index))
+    ind_red = Vector{CartesianIndex{D}}(undef, length(index))
     grid_red = GridPoints{D}(undef, length(index))
 
     # Compute reduced arrays
@@ -44,12 +44,16 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
     end
     k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
     m1 = -1 .* k0 .+ 0
+    
     ind_red_conv  = CartesianIndex.(circshift(ind, m1)[index]); # indices after conv
     ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[index]); # indices after crossc
-
-        #CartesianIndex.(circshift(ind, floor.(Int, Tuple(repeat([-Ns],D)) ./ 2) .+ 1)[index]); # indices after conv
-
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)
+
+    # Change from CartesianIndices to LinearIndices for performance reasons
+    I = LinearIndices(ind)
+    index = I[index]
+    ind_red_conv = I[ind_red_conv]
+    ind_red_crossc = I[ind_red_crossc]
     return index, ind_red_conv, ind_red_crossc, kMult, expand_perms, grid_red
 end
 

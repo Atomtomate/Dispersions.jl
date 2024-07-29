@@ -1,5 +1,4 @@
 using FFTW
-include("helper_functions.jl")
 
 @testset "reduce_expand" begin
     for gr in grid_list
