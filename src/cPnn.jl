@@ -16,6 +16,8 @@ basis_transform(::Type{cPnn}, v::Tuple) = v
 transform_to_first_BZ(kG::KGrid{cPnn,D}, k) where D =
     Tuple(map(ki -> ki != 0 ? mod(ki + (π - 1/kG.Nk), 2π) + (-π) + 1/kG.Nk : ki, k))
 
+conv_Indices(::Type{cPnn}, D::Int, Ns::Int) = conv_Indices(cP, D, Ns)
+
 function reduce_KGrid(::Type{cPnn}, D::Int, Ns::Int, kGrid::AbstractArray)
     return reduce_KGrid(cP, D::Int, Ns::Int, kGrid::AbstractArray)
 end

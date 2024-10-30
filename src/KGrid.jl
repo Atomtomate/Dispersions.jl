@@ -40,10 +40,10 @@ struct KGrid{T <: KGridType, D}
     cache1::Array{ComplexF64,D}
     cache2::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
-    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64, tpp::Float64; fftw_plan=nothing) where T<:KGridType
+    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64, tpp::Float64; full::Bool=false, fftw_plan=nothing) where T<:KGridType
         sampling = gen_sampling(GT, D, Ns)
         kGrid_f = map(v -> basis_transform(GT, v), sampling)
-        kInd, kInd_conv, kInd_crossc, kMult, expand_perms, kGrid = reduce_KGrid(GT, D, Ns, kGrid_f)
+        kInd, kInd_conv, kInd_crossc, kMult, expand_perms, kGrid = full ? reduce_KGrid_ident(GT, D, Ns, kGrid_f) : reduce_KGrid(GT, D, Ns, kGrid_f)
         ϵkGrid =  gen_ϵkGrid(GT, kGrid, t, tp, tpp)
         gs = repeat([Ns], D)
         k0 = findfirst(k -> all(isapprox.(k, 0, atol=1e-7)), kGrid_f)
@@ -58,7 +58,7 @@ struct KGrid{T <: KGridType, D}
 end
 
 """
-    gen_kGrid(kG::String, Ns::Int)
+    gen_kGrid(kg::String, Ns::Int; full=false)
 
 Generates a KGrid of type and hopping strength, given in `kG` with `Ns` sampling points in the first Brillouin zone. Options are:
 - '3dcP-...'         : simple cubic 3D
@@ -67,13 +67,15 @@ Generates a KGrid of type and hopping strength, given in `kG` with `Ns` sampling
 - 'cF-...'           : FCC
 - 'cI-...'           : BCC
 
+If `full=true` is set, no symmetry reduction is used.
+
 # Examples
 ```
 julia> gen_kGrid("3dcP-1.5", 10)
 cP(t=1.5) grid in 3 dimensions with 1000 k-points.
 ```
 """
-function gen_kGrid(kg::String, Ns::Int)
+function gen_kGrid(kg::String, Ns::Int; full=false)
     findfirst("-", kg) === nothing && throw(ArgumentError("Please provide lattice type and hopping, e.g. SC3D-1.1"))
     tp = 0.0
     tpp = 0.0
@@ -96,17 +98,17 @@ function gen_kGrid(kg::String, Ns::Int)
         gt_s = endswith(gt_s, "sc") ? string(gt_s, "nn") : gt_s
     end
     if gt_s == "3dsc"
-        KGrid(cP, 3, Ns, t, tp, tpp)
+        KGrid(cP, 3, Ns, t, tp, tpp; full=full)
     elseif gt_s == "2dscnn"
-        KGrid(cPnn, 2, Ns, t, tp, tpp)
+        KGrid(cPnn, 2, Ns, t, tp, tpp; full=full)
     elseif gt_s == "2dsc"
-        KGrid(cP, 2, Ns, t, tp, tpp)
+        KGrid(cP, 2, Ns, t, tp, tpp; full=full)
     elseif gt_s == "4dsc" || gt_s == "4dscnn"
-        KGrid(cP, 4, Ns, t, tp, tpp)
+        KGrid(cP, 4, Ns, t, tp, tpp; full=full)
     elseif gt_s == "fcc"
-        KGrid(cF, 3, Ns, t, tp, tpp)
+        KGrid(cF, 3, Ns, t, tp, tpp; full=full)
     elseif gt_s == "bcc"
-        KGrid(cI, 3, Ns, t, tp, tpp)
+        KGrid(cI, 3, Ns, t, tp, tpp; full=full)
     elseif startswith(gt_s, "hofstadter")
         println(gt_s, ", ", t, ", ", tp, ", ", tpp)
         GridName,P,Q = split(gt_s, ":")
@@ -125,7 +127,7 @@ end
 Returns a new vector `kp` that is transformed back into the sample region of `kG`.
 """
 transform_to_first_BZ(kG::KGrid{GridType,D}, k) where {GridType,D} = 
-    throw(ArgumentError("Cannot transform back to first BZ! Grid type $gt unkown!"))
+    throw(ArgumentError("Cannot transform back to first BZ! Grid type $(typeof(kG)) unkown!"))
 
 
 """
@@ -190,6 +192,29 @@ function map_to_indices(path::AbstractVector, grid::AbstractArray)
     return result_points, residual_vals
 end
 
+"""
+    reduce_KGrid_ident(Ns::Int, kGrid::AbstractArray)
+
+Identity operation for KGrid reduction. 
+    Used if a full KGrid is requested by providing [`gen_kGrid`](@ref gen_kGrid) with `full=true`.
+"""
+function reduce_KGrid_ident(gt::GT, D::Int, Ns::Int, kGrid::AbstractArray) where GT
+    ind = collect(Base.product([1:Ns for Di in 1:D]...))
+    index = [CartesianIndex(el) for el in ind[:]]
+    kMult = ones(Int, length(ind))
+    expand_perms = map(x -> [CartesianIndex{D}(x)],ind[:])
+    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
+    m1 = -1 .* k0 .+ 0
+    k0, m1 = conv_Indices(gt, D, Ns)
+    ind_red_conv  = CartesianIndex.(circshift(ind, m1)[index]); # indices after conv
+    ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[index]); # indices after crossc
+    # Change from CartesianIndices to LinearIndices for performance reasons
+    I = LinearIndices(ind)
+    index = I[index]
+    ind_red_conv = I[ind_red_conv]
+    ind_red_crossc = I[ind_red_crossc]
+    return index, ind_red_conv, ind_red_crossc, kMult, expand_perms, kGrid[:]
+end
 
 # ================================= Subsampling (Reimplement this!!!) ================================
 """

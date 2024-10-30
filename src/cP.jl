@@ -15,7 +15,12 @@ basis_transform(::Type{cP}, v::Tuple) = v
 
 transform_to_first_BZ(kG::KGrid{cP,D}, k) where D =
     Tuple(map(ki -> ki != 0 ? mod(ki + (π - 1/kG.Nk), 2π) + (-π) + 1/kG.Nk : ki, k))
-
+    
+function conv_Indices(::Type{cP}, D::Int, Ns::Int)
+    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
+    m1 = -1 .* k0 .+ 0
+    return k0, m1
+end
 
 function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
     (Ns % 2 != 0 && Ns != 1) && 
@@ -42,9 +47,9 @@ function reduce_KGrid(::Type{cP}, D::Int, Ns::Int, kGrid::AbstractArray)
         ind_red[i] = CartesianIndex(ind[ti])
         grid_red[i] = kGrid[ti]
     end
-    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
-    m1 = -1 .* k0 .+ 0
-    
+
+    k0, m1 = conv_Indices(cP, D, Ns)
+
     ind_red_conv  = CartesianIndex.(circshift(ind, m1)[index]); # indices after conv
     ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[index]); # indices after crossc
     kMult, expand_perms = build_expand_mapping_cP(D, Ns, ind_red)

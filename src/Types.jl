@@ -24,6 +24,8 @@ basis_transform(gt::GT, v::AbstractVector) where {GT} =
 reduce_KGrid(gt::GT, D::Int, Nk::Int, kGrid::Vector) where {GT} =
     throw(ArgumentError("Cannot reduce k grid! Grid type $gt unkown!"))
 
+conv_Indices(gt::GT, D::Int, Ns::Int) where {GT} =
+    throw(ArgumentError("Cannot generate convolution helper indices k grid! Grid type $gt unkown!"))
 
 # """
 #     symmetry_points(::GridType)

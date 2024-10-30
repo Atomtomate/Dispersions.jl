@@ -25,6 +25,7 @@ end
     for Ns in [4]
     for gr in grid_list
         kG = gen_kGrid(gr, Ns)
+        kG_f = gen_kGrid(gr, Ns, full=true)
         arr1 = randn(rng, ComplexF64, gridshape(kG))
         arr2 = randn(rng, ComplexF64, gridshape(kG))
         arr1_sym = expandKArr(kG, reduceKArr(kG, arr1))
@@ -39,6 +40,7 @@ end
         t1,_,_ = naive_conv(arr1_sym, arr2_sym, kG.k0)
         conv_res = conv(kG, reduceKArr(kG, arr1_sym), reduceKArr(kG, arr2_sym))
         conv_noPlan_res = conv_noPlan(kG, reduceKArr(kG, arr1_sym), reduceKArr(kG, arr2_sym))
+        conv_full_res = conv(kG_f, reduceKArr(kG_f, arr1_sym), reduceKArr(kG_f, arr2_sym))
 
         v_full = collect(Dispersions.gen_sampling(grid_type(kG), grid_dimension(kG),  kG.Ns))
         _, dbg_i_pp, dbg_val_pp = naive_conv(v_full, v_full, kG.k0, pp=true, round_entries=false);
@@ -77,7 +79,7 @@ end
                     @test all(map(entry -> length(unique(map(x->x[2], entry))), dbg_val) .== Nk(kG))
 
                     conv_ph_fft_test = circshift(reverse(ifft(fft(arr1_sym) .* fft(reverse(arr2_sym)))), kG.k0 .- 1)
-                    @test all(conv_ph_fft_test .≈ conv_ph_naive)
+                    @test all(abs.(conv_ph_fft_test .- conv_ph_naive) .< 1e-12)
                 end
 
                 q_list_pp = map(el->check_q(el, Nk(kG), pp=true), dbg_val_pp);
@@ -88,6 +90,10 @@ end
                 @test all(map(qi_list -> length(unique(qi_list)) == 1, q_list_pp_pre))
                 # extract only q vector (since we checked that only one unique exists
                 q_list_pp_single = map(x->x[1], q_list_pp_pre)
+
+                # Full Grid is working: check that convolution yields the same result 
+                @test all(expandKArr(kG_f,conv_full_res) .≈ expandKArr(kG, conv_res))
+
 
                 # bcc and fcc are only basis transformed simple cubic lattices
                 if !any(map(s -> contains(gr,s), ["bcc", "fcc", "cI", "cF"]))
@@ -103,6 +109,7 @@ end
                     @test all(conv_pp_fft_test .≈ conv_pp_naive)
                 end
             end
+
             @testset "reverse" begin
                 # bcc and fcc are only basis transformed simple cubic lattices
                 if !any(map(s -> contains(gr,s), ["bcc", "fcc", "cI", "cF"]))

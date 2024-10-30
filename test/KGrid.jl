@@ -11,7 +11,7 @@ using Base.Iterators
             @test kG.Nk == NN^Di
             @test kG.Ns == NN
             @test all(size(kG.cache1) .== repeat([NN], Di))
-            @test all(size(kG.cache2) .== repeat([NN], Di))
+            @test all(size(kG.cache2) .== repeat([NN], Di)) 
         end
     end
 end
