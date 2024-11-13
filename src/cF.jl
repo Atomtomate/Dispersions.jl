@@ -27,7 +27,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     )
     fsymm(kInd) = fccSymmetries(kInd,Ns)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
-    parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],12)));
+    parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],48)));
     kmap, ind_red = minimal_set(parents, vec(ind))
     grid_red = Array{NTuple{3,Float64},1}(undef,length(ind_red))
     for (i,indi) in enumerate(ind_red)
@@ -107,11 +107,17 @@ function build_expand_mapping_cF(D::Int, Ns::Int, ind_red::Array)
 end
 
 function fccSymmetries(kind,Ns)    
-    symm = Array{NTuple{3,Int64},1}(undef, 12)
+    symm = Array{NTuple{3,Int64},1}(undef, 48)
     perms = collect(permutations(kind .-1))
     for i in 1:length(perms)
-        symm[2*(i-1)+1] = Tuple(perms[i] .+1)
-        symm[2*(i-1)+2] = Tuple((mod.(Ns .- perms[i],Ns)) .+1)
+        symm[8*(i-1)+1] = Tuple(perms[i] .+1)
+        symm[8*(i-1)+2] = Tuple((mod.((-perms[i][2]+perms[i][3],-perms[i][1]+perms[i][3],perms[i][3]),Ns)) .+1)
+        symm[8*(i-1)+3] = Tuple((mod.((perms[i][1],perms[i][1]-perms[i][3],perms[i][1]-perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+4] = Tuple((mod.((perms[i][2]-perms[i][3],perms[i][2],-perms[i][1]+perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+5] = Tuple((mod.((-perms[i][2]+perms[i][3],-perms[i][2],perms[i][1]-perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+6] = Tuple((mod.((-perms[i][1],-perms[i][1]+perms[i][3],-perms[i][1]+perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+7] = Tuple((mod.((perms[i][2]-perms[i][3],perms[i][1]-perms[i][3],-perms[i][3]),Ns)) .+1)
+        symm[8*(i-1)+8] = Tuple((mod.((-perms[i][1],-perms[i][2],-perms[i][3]),Ns)) .+1)
     end
     return unique(symm)[:]
 end
