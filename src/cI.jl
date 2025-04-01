@@ -9,14 +9,14 @@ abstract type cI <: KGridType end
 # -------------------------------------------------------------------------------- #
 
 gen_sampling(::Type{cI}, D::Int, Ns::Int) =
-    Base.product([[(2 * π / Ns) * j - π for j = 1:Ns] for Di = 1:D]...)
+Base.product([[(2 * π / Ns) * (j - 1) for j = 1:Ns] for Di = 1:D]...)
 
 basis_transform(::Type{cI}, v::Tuple) =
     Tuple(transpose([1.0 1.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]) * collect(v))
 
 function conv_Indices(::Type{cI}, D::Int, Ns::Int)
-    k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
-    m1 = -1 .* k0 .+ 0
+    k0 = Tuple(repeat([0],D))
+    m1 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2)
     return k0, m1
 end
 
@@ -26,9 +26,9 @@ function reduce_KGrid(::Type{cI}, D::Int, Ns::Int, kGrid::AbstractArray)
             "BCC lattice only exists in 3 dimensions!",
         ),
     )
-    fsymm(kInd) = bccSymmetries(kInd)
+    fsymm(kInd) = bccSymmetries(kInd,Ns)
     ind = collect(Base.product([1:Ns for Di = 1:3]...))
-    parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],12)));
+    parents, ops = find_classes(fsymm, vec(ind), UInt32.(repeat([1],48)));
     kmap, ind_red = minimal_set(parents, vec(ind))
     grid_red = Array{NTuple{3,Float64},1}(undef,length(ind_red))
     for (i,indi) in enumerate(ind_red)
@@ -108,6 +108,18 @@ function build_expand_mapping_cI(D::Int, Ns::Int, ind_red::Array)
     return kMult, expand_perms
 end
 
-function bccSymmetries(kind)
-    return unique(Tuple.(collect(permutations(kind))))[:]
+function bccSymmetries(kind,Ns)
+    symm = Array{NTuple{3,Int64},1}(undef, 48)
+    perms = collect(permutations(kind .-1))
+    for i in 1:length(perms)
+        symm[8*(i-1)+1] = Tuple(perms[i] .+1)
+        symm[8*(i-1)+2] = Tuple((mod.((-perms[i][3],perms[i][1]+perms[i][2]+perms[i][3],-perms[i][1]),Ns)) .+1)
+        symm[8*(i-1)+3] = Tuple((mod.((-perms[i][2],-perms[i][1],perms[i][1]+perms[i][2]+perms[i][3]),Ns)) .+1)
+        symm[8*(i-1)+4] = Tuple((mod.((perms[i][1]+perms[i][2]+perms[i][3],-perms[i][3],-perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+5] = Tuple((mod.((-perms[i][1]-perms[i][2]-perms[i][3],perms[i][3],perms[i][2]),Ns)) .+1)
+        symm[8*(i-1)+6] = Tuple((mod.((perms[i][3],-perms[i][1]-perms[i][2]-perms[i][3],perms[i][1]),Ns)) .+1)
+        symm[8*(i-1)+7] = Tuple((mod.((perms[i][2],perms[i][1],-perms[i][1]-perms[i][2]-perms[i][3]),Ns)) .+1)
+        symm[8*(i-1)+8] = Tuple((mod.((-perms[i][1],-perms[i][2],-perms[i][3]),Ns)) .+1)
+    end
+    return unique(symm)[:]
 end
