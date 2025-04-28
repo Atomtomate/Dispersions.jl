@@ -78,7 +78,7 @@ full BZ. This is mainly used before convolutions, since they require data over t
 """
 function expandKArr(
     kG::KGrid{gT,D},
-    arr::AbstractArray{T,1},
+    arr::AbstractArray{T,1}; 
 )::AbstractArray{T,D} where {gT <: KGridType,T,D}
     length(arr) != length(kG.kInd) && throw(
         ArgumentError(
@@ -93,10 +93,15 @@ end
 """
     expandKArr!(kG, arr)
 
-Inplace version of [`expandKArr`](@ref). The results are written to `kG.cache1`.
+Inplace version of [`expandKArr`](@ref). The results are by default written to `kG.cache1`.
 """
-function expandKArr!(kG::KGrid, arr::Array{Complex{Float64},1})
-    expandKArr!(kG, kG.cache1, arr)
+function expandKArr!(
+    kG::KGrid, 
+    arr::Array{ComplexF64, 1}; 
+    res::Array{ComplexF64, D} = kG.cache1
+)::Nothing where {D}
+    expandKArr!(kG, res, arr)
+    return nothing
 end
 
 """
@@ -126,7 +131,7 @@ function reverseKArr(
     kG::KGrid{gT,D},
     arr::AbstractArray{T,1},
 )::AbstractArray{T,1} where {gT <: KGridType,T,D}
-    reduceKArr(reverseKArr(kG, expandKArr(kG, arr)))
+    reverseKArr(kG, expandKArr(kG, arr))
 end
 
 function reverseKArr(
@@ -150,11 +155,13 @@ function conv(
     kG::KGrid,
     arr1::AbstractArray{ComplexF64,1},
     arr2::AbstractArray{ComplexF64,1};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache1::Array{ComplexF64, D} = kG.cache1,
+    cache2::Array{ComplexF64, D} = kG.cache2
+) where D
     Nk(kG) == 1 && return arr1 .* arr2
     res = similar(arr2)
-    conv!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation)
+    conv!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation, cache1=cache1, cache2=cache2)
     return res
 end
 #TODO: only for testing, remove?
@@ -170,16 +177,17 @@ function conv!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64,1},
     arr2::AbstractArray{ComplexF64,1};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache1::Array{ComplexF64, D} = kG.cache1,
+    cache2::Array{ComplexF64, D} = kG.cache2
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    gs = gridshape(kG)
 
-    expandKArr!(kG, kG.cache2, arr2)
-    crosscorrelation && reverse!(kG.cache2)
-    kG.fftw_plan * kG.cache2
+    expandKArr!(kG, cache2, arr2)
+    crosscorrelation && reverse!(cache2)
+    kG.fftw_plan * cache2
 
-    conv_fft1!(kG, res, arr1, kG.cache2, crosscorrelation=crosscorrelation)
+    conv_fft1!(kG, res, arr1, cache2, crosscorrelation=crosscorrelation, cache=cache1)
 end
 
 """
@@ -192,11 +200,12 @@ function conv_fft1(
     kG::KGrid,
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return arr1 .* arr2
     res = similar(arr2)
-    conv_fft1!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation)
+    conv_fft1!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation, cache=cache)
     return res
 end
 
@@ -210,13 +219,14 @@ function conv_fft1!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64,1},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    expandKArr!(kG, kG.cache1, arr1)
-    kG.fftw_plan * kG.cache1
+    expandKArr!(kG, cache, arr1)
+    kG.fftw_plan * cache
 
-    conv_fft!(kG, res, kG.cache1, arr2, crosscorrelation=crosscorrelation)
+    conv_fft!(kG, res, cache, arr2, crosscorrelation=crosscorrelation, cache=cache)
 end
 
 """
@@ -229,11 +239,12 @@ function conv_fft(
     kG::KGrid,
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return arr1 .* arr2
     res = Array{ComplexF64,1}(undef, length(kG.kMult))
-    conv_fft!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation)
+    conv_fft!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation, cache=cache)
     return res
 end
 
@@ -248,15 +259,16 @@ function conv_fft!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool=true
-)
+    crosscorrelation::Bool=true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
 
-    for i in eachindex(kG.cache1)
-        @inbounds kG.cache1[i] = arr1[i] * arr2[i]
+    for i in eachindex(cache)
+        @inbounds cache[i] = arr1[i] * arr2[i]
     end
-    kG.fftw_plan \ kG.cache1
-    conv_post!(kG, res, kG.cache1, crosscorrelation=crosscorrelation)
+    kG.fftw_plan \ cache
+    conv_post!(kG, res, cache, crosscorrelation=crosscorrelation)
 end
 
 # ===== no plan functions. TODO: replace definition with macro + find a way to serialize plans
@@ -277,16 +289,17 @@ function conv_noPlan!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64,1},
     arr2::AbstractArray{ComplexF64,1};
-    crosscorrelation::Bool = true
-)
+    crosscorrelation::Bool = true,
+    cache1::Array{ComplexF64, D} = kG.cache1,
+    cache2::Array{ComplexF64, D} = kG.cache2
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    gs = gridshape(kG)
 
-    expandKArr!(kG, kG.cache2, arr2)
-    crosscorrelation && reverse!(kG.cache2)
+    expandKArr!(kG, cache2, arr2)
+    crosscorrelation && reverse!(cache2)
 
-    fft!(kG.cache2)
-    conv_fft1_noPlan!(kG, res, arr1, kG.cache2, crosscorrelation=crosscorrelation)
+    fft!(cache2)
+    conv_fft1_noPlan!(kG, res, arr1, cache2, crosscorrelation=crosscorrelation, cache=cache1)
 end
 
 function conv_fft1_noPlan(
@@ -306,24 +319,26 @@ function conv_fft1_noPlan!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64,1},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool = true
-)
+    crosscorrelation::Bool = true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
-    expandKArr!(kG, kG.cache1, arr1)
-    fft!(kG.cache1)
+    expandKArr!(kG, cache, arr1)
+    fft!(cache)
 
-    conv_fft_noPlan!(kG, res, kG.cache1, arr2, crosscorrelation=crosscorrelation)
+    conv_fft_noPlan!(kG, res, cache, arr2, crosscorrelation=crosscorrelation, cache=cache)
 end
 
 function conv_fft_noPlan(
     kG::KGrid,
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool = true
-)
+    crosscorrelation::Bool = true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return arr1 .* arr2
     res = Array{ComplexF64,1}(undef, length(kG.kMult))
-    conv_fft_noPlan!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation)
+    conv_fft_noPlan!(kG, res, arr1, arr2, crosscorrelation=crosscorrelation, cache=cache)
     return res
 end
 
@@ -332,15 +347,16 @@ function conv_fft_noPlan!(
     res::AbstractArray{ComplexF64,1},
     arr1::AbstractArray{ComplexF64},
     arr2::AbstractArray{ComplexF64};
-    crosscorrelation::Bool = true
-)
+    crosscorrelation::Bool = true,
+    cache::Array{ComplexF64, D} = kG.cache1
+) where D
     Nk(kG) == 1 && return (res[:] = arr1 .* arr2)
 
-    for i in eachindex(kG.cache1)
-        @inbounds kG.cache1[i] = arr1[i] * arr2[i]
+    for i in eachindex(cache)
+        @inbounds cache[i] = arr1[i] * arr2[i]
     end
-    ifft!(kG.cache1)
-    conv_post!(kG, res, kG.cache1, crosscorrelation=crosscorrelation)
+    ifft!(cache)
+    conv_post!(kG, res, cache, crosscorrelation=crosscorrelation)
 end
 
 # ------------------------------ Auxiliary Convolution Functions -----------------------------
@@ -359,8 +375,6 @@ end
 """
     conv_post!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
 
-Inplace version of [`conv_post`](@ref). Warning: `res` should not alias `kG.cache2` as some
-implementations may use this cache without explicitly checking for pointer aliases. 
 """
 function conv_post!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T}; crosscorrelation=true) where T 
     norm = Nk(kG)
@@ -375,8 +389,6 @@ end
     conv_post_add!(kG::KGrid{cP,D}, res::Array{T,1}, x::Array{T,D}) where {D,T} 
 
 Inplace version of [`conv_post`](@ref), but add values instead of replacing them.
-Warning: `res` should not alias `kG.cache2` as some
-implementations may use this cache without explicitly checking for pointer aliases. 
 """
 function conv_post_add!(kG::KGrid, res::AbstractArray{T,1}, x::AbstractArray{T}; crosscorrelation=true) where T 
     norm = Nk(kG)
@@ -428,5 +440,5 @@ function sample_along_path(data::AbstractArray, path::AbstractVector, kG::KGrid)
     sampling = gen_sampling(grid_type(kG), grid_dimension(kG), kG.Ns)
     grid = map(v -> basis_transform(grid_type(kG), v), sampling);
     result_points, residual_vals = map_to_indices(path, grid, kG)
-    return data[rr], residual_vals
+    return data[result_points], residual_vals
 end
