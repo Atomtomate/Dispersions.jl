@@ -1,7 +1,7 @@
 name = "Dispersions"
 uuid = "9451dd48-6b2a-4bde-a443-9ec270a37806"
 authors = ["Julian Stobbe <Atomtomate@gmx.de>", "Jan Frederik Weissler <f.weissler@outlook.de>", "<Marvin Leusch <marvin.leusch@studium.uni-hamburg.de>"]
-version = "1.1.0"
+version = "1.1.1"
 
 [deps]
 AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"

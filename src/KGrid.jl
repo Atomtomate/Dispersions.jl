@@ -36,7 +36,7 @@ struct KGrid{T <: KGridType, D}
     kInd_conv::GridInd
     kInd_crossc::GridInd
     kMult::Array{Float64,1}
-    expand_perms::Vector{Vector{CartesianIndex{D}}}
+    expand_perms::Vector{Vector{Int}}
     cache1::Array{ComplexF64,D}
     cache2::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
@@ -200,16 +200,17 @@ Identity operation for KGrid reduction.
 """
 function reduce_KGrid_ident(gt::GT, D::Int, Ns::Int, kGrid::AbstractArray) where GT
     ind = collect(Base.product([1:Ns for Di in 1:D]...))
+    I = LinearIndices(ind)
     index = [CartesianIndex(el) for el in ind[:]]
     kMult = ones(Int, length(ind))
-    expand_perms = map(x -> [CartesianIndex{D}(x)],ind[:])
+    expand_perms = map(x -> [I[CartesianIndex{D}(x)]],ind[:])
     k0 = floor.(Int, Tuple(repeat([Ns],D)) ./ 2) .- 1
     m1 = -1 .* k0 .+ 0
     k0, m1 = conv_Indices(gt, D, Ns)
     ind_red_conv  = CartesianIndex.(circshift(ind, m1)[index]); # indices after conv
     ind_red_crossc = CartesianIndex.(circshift(reverse(ind), k0)[index]); # indices after crossc
     # Change from CartesianIndices to LinearIndices for performance reasons
-    I = LinearIndices(ind)
+    
     index = I[index]
     ind_red_conv = I[ind_red_conv]
     ind_red_crossc = I[ind_red_crossc]

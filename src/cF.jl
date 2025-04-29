@@ -48,6 +48,7 @@ function reduce_KGrid(::Type{cF}, D::Int, Ns::Int, kGrid::AbstractArray)
     ind_red = I[ind_red]
     ind_red_conv = I[ind_red_conv]
     ind_red_crossc = I[ind_red_crossc]
+    expand_perms = map(x -> I[x], expand_perms)
     return ind_red, ind_red_conv, ind_red_crossc, kMult, expand_perms, grid_red
 end
 

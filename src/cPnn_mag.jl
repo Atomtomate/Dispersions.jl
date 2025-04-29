@@ -15,13 +15,14 @@ basis_transform(::Type{Hofstadter{P,Q}}, v::Tuple) where {P,Q} = (v[1], v[2]/Q)
 
 function reduce_KGrid(::Type{Hofstadter{P,Q}}, D::Int, Ns::Int, kGrid::AbstractArray) where {P,Q}
     ind = collect(Base.product([1:Ns for Di in 1:2]...))
+    I = LinearIndices(ind)
     index = [CartesianIndex(el) for el in ind[:]]
     kMult = ones(length(ind))
-    expand_perms = map(x -> [CartesianIndex{2}(x)],ind[:])
+    expand_perms = map(x -> [I[CartesianIndex{2}(x)]],ind[:])
     red_map = CartesianIndex.(ind[:])
     red_conv_map = reverse(red_map)
     # Change from CartesianIndices to LinearIndices for performance reasons
-    I = LinearIndices(ind)
+    
     index = I[index]
     # ind_red_conv = I[ind_red_conv]
     # ind_red_crossc = I[ind_red_crossc]
