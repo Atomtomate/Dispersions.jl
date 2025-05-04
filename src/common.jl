@@ -113,12 +113,13 @@ function expandKArr!(
     kG::KGrid{gT,D},
     res::AbstractArray{T,D},
     arr::Array{T,1},
-) where {gT <: KGridType,T,D}
+)::Nothing where {gT <: KGridType,T,D}
     for (ri, perms) in enumerate(kG.expand_perms)
         @simd for p in perms
             @inbounds res[p] = arr[ri]
         end
     end
+    return nothing
 end
 
 """
@@ -355,7 +356,7 @@ function conv_fft_noPlan!(
     for i in eachindex(cache)
         @inbounds cache[i] = arr1[i] * arr2[i]
     end
-    ifft!(cache)
+    kG.ifftw_plan * cache
     conv_post!(kG, res, cache, crosscorrelation=crosscorrelation)
 end
 

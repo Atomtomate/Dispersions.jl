@@ -1,6 +1,0 @@
-- missing tests:
-    - fft
-    - ifft
-    - conv
-    - conv_fft1
-    - conv_fft

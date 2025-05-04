@@ -40,7 +40,8 @@ struct KGrid{T <: KGridType, D}
     cache1::Array{ComplexF64,D}
     cache2::Array{ComplexF64,D}
     fftw_plan::FFTW.cFFTWPlan
-    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64, tpp::Float64; full::Bool=false, fftw_plan=nothing) where T<:KGridType
+    ifftw_plan::AbstractFFTs.ScaledPlan
+    function KGrid(GT::Type{T}, D::Int, Ns::Int, t::Float64, tp::Float64, tpp::Float64; full::Bool=false, fftw_plan=nothing, ifftw_plan=nothing) where T<:KGridType
         sampling = gen_sampling(GT, D, Ns)
         kGrid_f = map(v -> basis_transform(GT, v), sampling)
         kInd, kInd_conv, kInd_crossc, kMult, expand_perms, kGrid = full ? reduce_KGrid_ident(GT, D, Ns, kGrid_f) : reduce_KGrid(GT, D, Ns, kGrid_f)
@@ -51,9 +52,13 @@ struct KGrid{T <: KGridType, D}
             #println("WARNING!!! k-grid sampling must contain zero-vector in order for convolutions to work!")
             k0 = first(CartesianIndices([1 2; 3 4]))
         end
-        fftw_plan = fftw_plan === nothing ? plan_fft!(FFTW.FakeArray{ComplexF64}(gs...), flags=FFTW.ESTIMATE, timelimit=Inf) : fftw_plan
+        cache1 = Array{ComplexF64,D}(undef, gs...)
+        cache2 = Array{ComplexF64,D}(undef, gs...)
+        FFTW.set_num_threads(1);
+        fftw_plan = fftw_plan === nothing ? plan_fft!(cache1, flags=FFTW.PATIENT, timelimit=Inf, num_threads=1)  : fftw_plan
+        ifftw_plan = ifftw_plan === nothing ? plan_ifft!(cache1, flags=FFTW.PATIENT, timelimit=Inf, num_threads=1)  : ifftw_plan
         new{GT,D}(Ns^D, Ns, t, tp, tpp, k0, kGrid, ϵkGrid, kInd, kInd_conv, kInd_crossc, kMult, expand_perms,
-                  Array{ComplexF64,D}(undef, gs...), Array{ComplexF64,D}(undef, gs...), fftw_plan)
+            cache1, cache2, fftw_plan, ifftw_plan)
     end
 end
 
