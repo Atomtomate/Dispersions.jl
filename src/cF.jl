@@ -91,7 +91,7 @@ function build_expand_mapping_cF(D::Int, Ns::Int, ind_red::Array)
     end
     #  - Expand mapping
     for (ri, redInd) in enumerate(ind_red)
-        perms = unique(permutations(redInd))
+        perms = unique(permutations(Tuple(redInd)))
         expand_perms[ri] = Vector{CartesianIndex{D}}()
         for (ip, p) in enumerate(perms)
             push!(expand_perms[ri], CartesianIndex(p...))
